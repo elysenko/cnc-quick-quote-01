@@ -2,65 +2,6 @@ import { NestingResult, Placement } from './models';
 
 export type Poly = number[][];
 
-/** Builds a rounded-rectangle outline as a flattened polyline (mm, part-local). */
-function roundedRect(w: number, h: number, r: number, segs = 8): Poly {
-  const pts: Poly = [];
-  const corners: [number, number, number][] = [
-    [w - r, h - r, 0],
-    [r, h - r, Math.PI / 2],
-    [r, r, Math.PI],
-    [w - r, r, (3 * Math.PI) / 2],
-  ];
-  for (const [cx, cy, start] of corners) {
-    for (let i = 0; i <= segs; i++) {
-      const a = start + (i / segs) * (Math.PI / 2);
-      pts.push([cx + r * Math.cos(a), cy + r * Math.sin(a)]);
-    }
-  }
-  pts.push(pts[0]);
-  return pts;
-}
-
-function circle(cx: number, cy: number, r: number, segs = 28): Poly {
-  const pts: Poly = [];
-  for (let i = 0; i <= segs; i++) {
-    const a = (i / segs) * Math.PI * 2;
-    pts.push([cx + r * Math.cos(a), cy + r * Math.sin(a)]);
-  }
-  return pts;
-}
-
-function slot(cx: number, cy: number, len: number, r: number, segs = 14): Poly {
-  const pts: Poly = [];
-  const half = len / 2;
-  for (let i = 0; i <= segs; i++) {
-    const a = -Math.PI / 2 + (i / segs) * Math.PI;
-    pts.push([cx + half + r * Math.cos(a), cy + r * Math.sin(a)]);
-  }
-  for (let i = 0; i <= segs; i++) {
-    const a = Math.PI / 2 + (i / segs) * Math.PI;
-    pts.push([cx - half + r * Math.cos(a), cy + r * Math.sin(a)]);
-  }
-  pts.push(pts[0]);
-  return pts;
-}
-
-/** The demo part: a 240 x 160 mm flanged mounting bracket with holes and a slot. */
-export const DEMO_PART_WIDTH_MM = 240;
-export const DEMO_PART_HEIGHT_MM = 160;
-
-export function demoPartPolylines(): Poly[] {
-  return [
-    roundedRect(DEMO_PART_WIDTH_MM, DEMO_PART_HEIGHT_MM, 12),
-    circle(28, 28, 7),
-    circle(DEMO_PART_WIDTH_MM - 28, 28, 7),
-    circle(28, DEMO_PART_HEIGHT_MM - 28, 7),
-    circle(DEMO_PART_WIDTH_MM - 28, DEMO_PART_HEIGHT_MM - 28, 7),
-    slot(DEMO_PART_WIDTH_MM / 2, DEMO_PART_HEIGHT_MM / 2, 64, 11),
-    circle(DEMO_PART_WIDTH_MM / 2, DEMO_PART_HEIGHT_MM - 34, 5),
-  ];
-}
-
 /** Total cut length of a polyline set, in millimetres. */
 export function cutLength(polylines: Poly[]): number {
   let total = 0;

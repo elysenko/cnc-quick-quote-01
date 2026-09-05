@@ -1,47 +1,93 @@
-import { Injectable, computed, signal } from '@angular/core';
-import { BendLine, Drawing, MachineSettings, Material, PricingSettings, UploadSettings } from './models';
-import { DEMO_PART_HEIGHT_MM, DEMO_PART_WIDTH_MM, cutLength, demoPartPolylines, nest } from './geometry';
-import { priceQuote } from './pricing';
+import { Injectable, computed, inject, signal } from '@angular/core';
+import {
+  BendLine,
+  Drawing,
+  MachineSettings,
+  Material,
+  NestingResult,
+  PricingSettings,
+  UploadSettings,
+} from './models';
+import { nest } from './geometry';
+import { PriceResult, priceQuote } from './pricing';
+import { ApiClient } from './api';
 
-const DEMO_POLYLINES = demoPartPolylines();
+/** Server shape of a persisted quote — the authoritative price. */
+export interface QuoteRecord {
+  id: string;
+  reference: string;
+  drawingId: string;
+  drawingName: string;
+  materialId: string;
+  materialName: string;
+  thicknessMm: number;
+  quantity: number;
+  bendCount: number;
+  sheetCount: number;
+  utilisation: number;
+  cutLengthMm: number;
+  totalCents: number;
+  status: string;
+  createdAt: string;
+  nesting: NestingResult;
+  price: PriceResult;
+  polylines: number[][][];
+}
+
+interface SettingsBundle {
+  pricing: PricingSettings;
+  machine: MachineSettings;
+  upload: UploadSettings;
+}
+
+/** Rendered when no material has been chosen yet, so the summary panels can
+ *  bind safely before the catalogue has loaded. */
+const NO_MATERIAL: Material = {
+  id: '',
+  name: 'No material selected',
+  thicknessMm: 0,
+  costPerFtCents: 0,
+  costMultiplier: 1,
+  sheetWidthMm: 2500,
+  sheetHeightMm: 1250,
+  perSheetCostCents: 0,
+  active: false,
+};
+
+const EMPTY_NESTING: NestingResult = {
+  sheetCount: 0,
+  utilisation: 0,
+  rotated: false,
+  cols: 0,
+  rows: 0,
+  placements: [],
+  sheetWidthMm: 2500,
+  sheetHeightMm: 1250,
+};
 
 /**
- * Wizard state shared by the four /quote/new steps. In production the service
- * layer feeds these signals from the drawings / bends / quotes tRPC routers.
+ * State shared by the four /quote/new steps.
+ *
+ * Everything here is loaded from the API: the drawing comes from the upload
+ * endpoint (which parsed the real DXF), the materials and limits from admin
+ * settings. `nesting` and `price` recompute locally so the configure step
+ * responds instantly to a quantity change; once the quote is generated the
+ * server's persisted result takes over and is what the customer is charged.
  */
 @Injectable({ providedIn: 'root' })
 export class QuoteDraftService {
-  readonly drawing = signal<Drawing | null>({
-    id: 'drw_8f21',
-    filename: 'bracket-rev-c.dxf',
-    sizeBytes: 148_320,
-    cutLengthMm: Math.round(cutLength(DEMO_POLYLINES) * 10) / 10,
-    bboxWidthMm: DEMO_PART_WIDTH_MM,
-    bboxHeightMm: DEMO_PART_HEIGHT_MM,
-    entityCount: 34,
-    skippedEntities: 2,
-    uploadedAt: '2026-09-05T09:12:00Z',
-    polylines: DEMO_POLYLINES,
-  });
+  private readonly api = inject(ApiClient);
 
-  readonly bends = signal<BendLine[]>([
-    { id: 'bnd_1', drawingId: 'drw_8f21', x1: 46, y1: 18, x2: 46, y2: 142, angleDeg: 90, direction: 'up' },
-    { id: 'bnd_2', drawingId: 'drw_8f21', x1: 194, y1: 18, x2: 194, y2: 142, angleDeg: 90, direction: 'down' },
-  ]);
-
-  readonly materials = signal<Material[]>([
-    { id: 'mat_1', name: 'Mild steel 1.5 mm', thicknessMm: 1.5, costPerFtCents: 210, costMultiplier: 1, sheetWidthMm: 2500, sheetHeightMm: 1250, perSheetCostCents: 5400, active: true },
-    { id: 'mat_2', name: 'Mild steel 3.0 mm', thicknessMm: 3, costPerFtCents: 320, costMultiplier: 1.35, sheetWidthMm: 2500, sheetHeightMm: 1250, perSheetCostCents: 9800, active: true },
-    { id: 'mat_3', name: 'Aluminium 5052 2.0 mm', thicknessMm: 2, costPerFtCents: 285, costMultiplier: 1.6, sheetWidthMm: 2440, sheetHeightMm: 1220, perSheetCostCents: 11200, active: true },
-    { id: 'mat_4', name: 'Stainless 304 1.2 mm', thicknessMm: 1.2, costPerFtCents: 410, costMultiplier: 2.1, sheetWidthMm: 2500, sheetHeightMm: 1250, perSheetCostCents: 16400, active: true },
-  ]);
+  readonly drawing = signal<Drawing | null>(null);
+  readonly bends = signal<BendLine[]>([]);
+  readonly materials = signal<Material[]>([]);
 
   readonly pricing = signal<PricingSettings>({
-    costPerFtCents: 240,
-    setupFeeCents: 4500,
-    handlingCents: 1200,
-    minimumOrderCents: 7500,
-    costPerBendCents: 175,
+    costPerFtCents: 0,
+    setupFeeCents: 0,
+    handlingCents: 0,
+    minimumOrderCents: 0,
+    costPerBendCents: 0,
   });
 
   readonly machine = signal<MachineSettings>({
@@ -53,27 +99,46 @@ export class QuoteDraftService {
   });
 
   readonly uploads = signal<UploadSettings>({
-    allowedExtensions: '.dxf, .dwg',
+    allowedExtensions: '.dxf',
     maxUploadMb: 10,
     quantityMin: 1,
     quantityMax: 500,
   });
 
-  readonly materialId = signal<string>('mat_2');
-  readonly quantity = signal<number>(24);
-  readonly uploaded = signal<boolean>(true);
+  readonly materialId = signal<string>('');
+  readonly quantity = signal<number>(1);
+
+  /** The quote persisted by the API for the current inputs, once generated. */
+  readonly savedQuote = signal<QuoteRecord | null>(null);
+  readonly generating = signal(false);
+  readonly loadError = signal<string | null>(null);
+
+  readonly uploaded = computed(() => this.drawing() !== null);
 
   readonly material = computed<Material>(
-    () => this.materials().find((m) => m.id === this.materialId()) ?? this.materials()[0],
+    () => this.materials().find((m) => m.id === this.materialId()) ?? this.materials()[0] ?? NO_MATERIAL,
   );
 
-  readonly nesting = computed(() => {
+  /** True when the saved quote still describes exactly what is on screen. */
+  private readonly savedMatches = computed(() => {
+    const saved = this.savedQuote();
+    return (
+      saved !== null &&
+      saved.drawingId === this.drawing()?.id &&
+      saved.materialId === this.material().id &&
+      saved.quantity === this.quantity() &&
+      saved.bendCount === this.bends().length
+    );
+  });
+
+  private readonly localNesting = computed<NestingResult>(() => {
     const drawing = this.drawing();
     const material = this.material();
+    if (!drawing || !material.id) return EMPTY_NESTING;
     const machine = this.machine();
     return nest({
-      partWidthMm: drawing?.bboxWidthMm ?? DEMO_PART_WIDTH_MM,
-      partHeightMm: drawing?.bboxHeightMm ?? DEMO_PART_HEIGHT_MM,
+      partWidthMm: drawing.bboxWidthMm,
+      partHeightMm: drawing.bboxHeightMm,
       sheetWidthMm: material.sheetWidthMm,
       sheetHeightMm: material.sheetHeightMm,
       spacingMm: machine.partSpacingMm,
@@ -82,32 +147,132 @@ export class QuoteDraftService {
     });
   });
 
-  readonly price = computed(() =>
-    priceQuote({
+  readonly nesting = computed<NestingResult>(() =>
+    this.savedMatches() ? this.savedQuote()!.nesting : this.localNesting(),
+  );
+
+  readonly price = computed<PriceResult>(() => {
+    if (this.savedMatches()) return this.savedQuote()!.price;
+    return priceQuote({
       partCutLengthMm: this.drawing()?.cutLengthMm ?? 0,
       quantity: this.quantity(),
       bendsPerPart: this.bends().length,
-      sheetCount: this.nesting().sheetCount,
+      sheetCount: this.localNesting().sheetCount,
       material: this.material(),
       pricing: this.pricing(),
-    }),
-  );
+    });
+  });
 
-  readonly partPolylines = computed(() => this.drawing()?.polylines ?? DEMO_POLYLINES);
+  readonly partPolylines = computed<number[][][]>(() => this.drawing()?.polylines ?? []);
 
-  addBend(bend: BendLine): void {
+  // ── Loading ───────────────────────────────────────────────────────────────
+
+  /** Pulls the catalogue and the admin limits the wizard has to respect. */
+  async loadReferenceData(): Promise<void> {
+    try {
+      const [materials, settings] = await Promise.all([
+        this.api.get<Material[]>('/materials'),
+        this.api.get<SettingsBundle>('/settings/public'),
+      ]);
+      this.materials.set(materials);
+      this.pricing.set(settings.pricing);
+      this.machine.set(settings.machine);
+      this.uploads.set(settings.upload);
+      if (!this.materialId() && materials.length) this.materialId.set(materials[0].id);
+      this.quantity.update((value) =>
+        Math.min(settings.upload.quantityMax, Math.max(settings.upload.quantityMin, value)),
+      );
+      this.loadError.set(null);
+    } catch {
+      this.loadError.set('We could not load the material catalogue. Please refresh.');
+    }
+  }
+
+  setDrawing(drawing: Drawing): void {
+    this.drawing.set(drawing);
+    this.bends.set([]);
+    this.savedQuote.set(null);
+    void this.loadBends(drawing.id);
+  }
+
+  async loadBends(drawingId: string): Promise<void> {
+    this.bends.set(await this.api.get<BendLine[]>('/bends', { drawingId }));
+  }
+
+  // ── Bend editing (optimistic, reconciled with the server) ─────────────────
+
+  async addBend(bend: BendLine): Promise<BendLine | null> {
+    const drawingId = this.drawing()?.id;
+    if (!drawingId) return null;
     this.bends.update((list) => [...list, bend]);
+    try {
+      const saved = await this.api.post<BendLine>('/bends', { ...bend, drawingId });
+      this.bends.update((list) => list.map((b) => (b.id === bend.id ? saved : b)));
+      this.savedQuote.set(null);
+      return saved;
+    } catch {
+      this.bends.update((list) => list.filter((b) => b.id !== bend.id));
+      return null;
+    }
   }
 
-  updateBend(id: string, patch: Partial<BendLine>): void {
+  async updateBend(id: string, patch: Partial<BendLine>): Promise<void> {
+    const previous = this.bends().find((b) => b.id === id);
     this.bends.update((list) => list.map((b) => (b.id === id ? { ...b, ...patch } : b)));
+    try {
+      const saved = await this.api.patch<BendLine>(`/bends/${id}`, patch);
+      this.bends.update((list) => list.map((b) => (b.id === id ? saved : b)));
+      this.savedQuote.set(null);
+    } catch {
+      if (previous) this.bends.update((list) => list.map((b) => (b.id === id ? previous : b)));
+    }
   }
 
-  removeBend(id: string): void {
+  async removeBend(id: string): Promise<void> {
+    const previous = this.bends();
     this.bends.update((list) => list.filter((b) => b.id !== id));
+    try {
+      await this.api.delete(`/bends/${id}`);
+      this.savedQuote.set(null);
+    } catch {
+      this.bends.set(previous);
+    }
   }
 
   setQuantity(value: number): void {
     this.quantity.set(value);
+    this.savedQuote.set(null);
+  }
+
+  // ── Quote generation ──────────────────────────────────────────────────────
+
+  /**
+   * Persists the quote server-side and adopts its numbers. Called when the
+   * result step opens, so what the customer sees is what was stored.
+   */
+  async ensureQuote(): Promise<QuoteRecord | null> {
+    if (this.savedMatches()) return this.savedQuote();
+    const drawingId = this.drawing()?.id;
+    const materialId = this.material().id;
+    if (!drawingId || !materialId) return null;
+
+    this.generating.set(true);
+    try {
+      const quote = await this.api.post<QuoteRecord>('/quotes', {
+        drawingId,
+        materialId,
+        quantity: this.quantity(),
+      });
+      this.savedQuote.set(quote);
+      this.loadError.set(null);
+      return quote;
+    } catch (error) {
+      this.loadError.set(
+        error instanceof Error ? error.message : 'We could not generate that quote.',
+      );
+      return null;
+    } finally {
+      this.generating.set(false);
+    }
   }
 }

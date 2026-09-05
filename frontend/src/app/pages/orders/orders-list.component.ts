@@ -1,10 +1,12 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { EmptyStateComponent } from '../../shared/empty-state.component';
 import { IconComponent } from '../../shared/icon.component';
 import { Order, OrderStatus } from '../../core/models';
 import { money, shortDate } from '../../core/format';
+import { ApiClient, errorMessage } from '../../core/api';
+import { ToastService } from '../../shared/toast.service';
 
 const PAGE_SIZE = 5;
 
@@ -16,19 +18,15 @@ const PAGE_SIZE = 5;
   styleUrl: './orders-list.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class OrdersListComponent {
+export class OrdersListComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
+  private readonly api = inject(ApiClient);
+  private readonly toast = inject(ToastService);
   private readonly query = toSignal(this.route.queryParamMap, { initialValue: null });
 
-  readonly orders = signal<Order[]>([
-    { id: 'o_3041', orderNumber: 'ORD-2026-3041', quoteRef: 'Q-2026-0148', customerName: 'Jordan Reyes', customerEmail: 'j.reyes@northgate-eng.com', materialName: 'Mild steel 3.0 mm', quantity: 24, shippingMethod: 'Standard freight', subtotalCents: 27840, shippingCents: 2400, totalCents: 30240, status: 'paid', placedAt: '2026-09-05T09:22:00Z', emailError: null },
-    { id: 'o_3038', orderNumber: 'ORD-2026-3038', quoteRef: 'Q-2026-0147', customerName: 'Jordan Reyes', customerEmail: 'j.reyes@northgate-eng.com', materialName: 'Mild steel 1.5 mm', quantity: 120, shippingMethod: 'Per-sheet pallet freight', subtotalCents: 51260, shippingCents: 3600, totalCents: 54860, status: 'in_production', placedAt: '2026-09-03T16:02:00Z', emailError: null },
-    { id: 'o_3021', orderNumber: 'ORD-2026-3021', quoteRef: 'Q-2026-0144', customerName: 'Jordan Reyes', customerEmail: 'j.reyes@northgate-eng.com', materialName: 'Mild steel 1.5 mm', quantity: 60, shippingMethod: 'Workshop collection', subtotalCents: 39960, shippingCents: 0, totalCents: 39960, status: 'shipped', placedAt: '2026-08-19T14:10:00Z', emailError: 'Resend timed out; receipt available for download' },
-    { id: 'o_2994', orderNumber: 'ORD-2026-2994', quoteRef: 'Q-2026-0139', customerName: 'Jordan Reyes', customerEmail: 'j.reyes@northgate-eng.com', materialName: 'Aluminium 5052 2.0 mm', quantity: 30, shippingMethod: 'Standard freight', subtotalCents: 61200, shippingCents: 2400, totalCents: 63600, status: 'shipped', placedAt: '2026-07-28T10:44:00Z', emailError: null },
-    { id: 'o_2960', orderNumber: 'ORD-2026-2960', quoteRef: 'Q-2026-0131', customerName: 'Jordan Reyes', customerEmail: 'j.reyes@northgate-eng.com', materialName: 'Stainless 304 1.2 mm', quantity: 12, shippingMethod: 'Standard freight', subtotalCents: 28900, shippingCents: 2400, totalCents: 31300, status: 'shipped', placedAt: '2026-07-02T09:05:00Z', emailError: null },
-    { id: 'o_2933', orderNumber: 'ORD-2026-2933', quoteRef: 'Q-2026-0126', customerName: 'Jordan Reyes', customerEmail: 'j.reyes@northgate-eng.com', materialName: 'Mild steel 3.0 mm', quantity: 8, shippingMethod: 'Workshop collection', subtotalCents: 15400, shippingCents: 0, totalCents: 15400, status: 'cancelled', placedAt: '2026-06-14T12:30:00Z', emailError: null },
-  ]);
+  /** The signed-in customer's own orders, straight from the API. */
+  readonly orders = signal<Order[]>([]);
 
   readonly statuses = [
     { value: 'all', label: 'All' },
@@ -55,6 +53,20 @@ export class OrdersListComponent {
     return this.filtered().slice(start, start + PAGE_SIZE);
   });
 
+  ngOnInit(): void {
+    void this.load();
+  }
+
+  /** A failure leaves the list empty and says so — never a stand-in row. */
+  private async load(): Promise<void> {
+    try {
+      this.orders.set(await this.api.get<Order[]>('/orders'));
+    } catch (error) {
+      this.orders.set([]);
+      this.toast.show(errorMessage(error, 'We could not load your orders.'), 'danger');
+    }
+  }
+
   setStatus(status: string): void {
     this.patch({ status: status === 'all' ? null : status, page: null });
   }
@@ -65,6 +77,24 @@ export class OrdersListComponent {
 
   private patch(queryParams: Record<string, string | null>): void {
     this.router.navigate([], { relativeTo: this.route, queryParams, queryParamsHandling: 'merge' });
+  }
+
+  /** Streams the stored PDF receipt for one row to disk. */
+  async downloadReceipt(event: Event, orderId: string): Promise<void> {
+    event.preventDefault();
+    const order = this.orders().find((candidate) => candidate.id === orderId);
+    if (!order) return;
+    try {
+      const blob = await this.api.blob(`/orders/${order.id}/receipt`);
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `receipt-${order.orderNumber}.pdf`;
+      link.click();
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      this.toast.show(errorMessage(error, 'We could not download that receipt.'), 'danger');
+    }
   }
 
   statusLabel(status: OrderStatus): string {

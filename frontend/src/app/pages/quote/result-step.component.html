@@ -47,7 +47,7 @@
       <div class="card__head"><h2 class="card__title">Job summary</h2></div>
       <div class="card__body">
         <div class="grid grid--auto">
-          <div class="stat"><span class="stat__label">Quote</span><span class="stat__value" data-testid="result-reference">{{ quoteRef }}</span></div>
+          <div class="stat"><span class="stat__label">Quote</span><span class="stat__value" data-testid="result-reference">{{ quoteRef() }}</span></div>
           <div class="stat"><span class="stat__label">Parts</span><span class="stat__value" data-testid="result-quantity">{{ quantity() }}</span></div>
           <div class="stat"><span class="stat__label">Total cut</span><span class="stat__value">{{ feet(price().totalCutLengthMm) }}</span></div>
           <div class="stat"><span class="stat__label">Total bends</span><span class="stat__value">{{ price().totalBends }}</span></div>
@@ -75,7 +75,7 @@
       />
     </div>
     <div class="card__foot foot">
-      <a class="btn btn--primary btn--block" [routerLink]="['/checkout', 'q_0148', 'review']" data-testid="result-checkout">
+      <a class="btn btn--primary btn--block" [routerLink]="['/checkout', quoteId(), 'review']" data-testid="result-checkout">
         Continue to checkout <app-icon name="chevron" [size]="16" />
       </a>
       <a class="btn btn--ghost btn--block" routerLink="/quote/new/configure" data-testid="result-adjust">Adjust material or quantity</a>

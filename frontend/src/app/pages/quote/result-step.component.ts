@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { WorkBedCanvasComponent } from '../../canvas/work-bed-canvas.component';
@@ -15,7 +15,7 @@ import { feet, mm, money, percent } from '../../core/format';
   styleUrl: './result-step.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class ResultStepComponent {
+export class ResultStepComponent implements OnInit {
   private readonly draft = inject(QuoteDraftService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
@@ -31,6 +31,7 @@ export class ResultStepComponent {
   readonly machine = this.draft.machine;
   readonly price = this.draft.price;
   readonly pricing = this.draft.pricing;
+  readonly generating = this.draft.generating;
 
   readonly sheetIndex = signal(0);
   readonly money = money;
@@ -40,10 +41,23 @@ export class ResultStepComponent {
 
   /** The work bed auto-starts here; `?anim=` keeps the running state addressable. */
   readonly running = computed(() => this.query()?.get('anim') !== 'stopped');
-  readonly quoteRef = 'Q-2026-0148';
+
+  /** Reference of the persisted quote — blank until the server has stored it. */
+  readonly quoteRef = computed(() => this.draft.savedQuote()?.reference ?? '—');
+
+  /** Drives the checkout link; falls back to the list when nothing is saved yet. */
+  readonly quoteId = computed(() => this.draft.savedQuote()?.id ?? '');
+
+  /**
+   * Persists the quote as soon as the step opens, so what is displayed is what
+   * was stored — the customer is never shown a price the server did not record.
+   */
+  ngOnInit(): void {
+    void this.draft.ensureQuote();
+  }
 
   toggleAnimation(): void {
-    this.router.navigate([], {
+    void this.router.navigate([], {
       relativeTo: this.route,
       queryParams: { anim: this.running() ? 'stopped' : 'running' },
       queryParamsHandling: 'merge',
@@ -52,9 +66,9 @@ export class ResultStepComponent {
 
   changeSheet(delta: number): void {
     const max = this.nesting().sheetCount - 1;
-    this.sheetIndex.update((i) => Math.min(max, Math.max(0, i + delta)));
+    this.sheetIndex.update((index) => Math.min(max, Math.max(0, index + delta)));
   }
 
-  readonly partWidth = computed(() => this.drawing()?.bboxWidthMm ?? 240);
-  readonly partHeight = computed(() => this.drawing()?.bboxHeightMm ?? 160);
+  readonly partWidth = computed(() => this.drawing()?.bboxWidthMm ?? 0);
+  readonly partHeight = computed(() => this.drawing()?.bboxHeightMm ?? 0);
 }

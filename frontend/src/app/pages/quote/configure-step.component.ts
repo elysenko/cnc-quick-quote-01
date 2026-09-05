@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { QuoteDraftService } from '../../core/quote-draft.service';
 import { CostBreakdownComponent } from '../../shared/cost-breakdown.component';
@@ -13,7 +13,7 @@ import { money, mm, percent } from '../../core/format';
   styleUrl: './configure-step.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class ConfigureStepComponent {
+export class ConfigureStepComponent implements OnInit {
   private readonly draft = inject(QuoteDraftService);
 
   readonly materials = computed(() => this.draft.materials().filter((m) => m.active));
@@ -32,14 +32,20 @@ export class ConfigureStepComponent {
   readonly percent = percent;
 
   readonly perSheet = computed(() => {
-    const n = this.nesting();
-    return n.cols * n.rows;
+    const nesting = this.nesting();
+    return nesting.cols * nesting.rows;
   });
+
+  ngOnInit(): void {
+    void this.draft.loadReferenceData();
+  }
 
   selectMaterial(id: string): void {
     this.draft.materialId.set(id);
+    this.draft.savedQuote.set(null);
   }
 
+  /** Mirrors the server's quantity rule so the limit is stated before submitting. */
   setQuantity(raw: string): void {
     const limits = this.uploads();
     const value = Number(raw);

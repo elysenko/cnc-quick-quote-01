@@ -1,12 +1,34 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { EmptyStateComponent } from '../../shared/empty-state.component';
 import { IconComponent } from '../../shared/icon.component';
 import { Quote, QuoteStatus } from '../../core/models';
 import { money, percent, shortDate } from '../../core/format';
+import { ApiClient, errorMessage } from '../../core/api';
+import { QuoteRecord } from '../../core/quote-draft.service';
+import { ToastService } from '../../shared/toast.service';
 
 const PAGE_SIZE = 6;
+
+/** The API's status strings map 1:1 onto the union the badges switch on. */
+function toQuote(record: QuoteRecord): Quote {
+  return {
+    id: record.id,
+    reference: record.reference,
+    drawingName: record.drawingName,
+    materialName: record.materialName,
+    thicknessMm: record.thicknessMm,
+    quantity: record.quantity,
+    bendCount: record.bendCount,
+    sheetCount: record.sheetCount,
+    utilisation: record.utilisation,
+    cutLengthMm: record.cutLengthMm,
+    totalCents: record.totalCents,
+    status: record.status as QuoteStatus,
+    createdAt: record.createdAt,
+  };
+}
 
 @Component({
   selector: 'app-quotes-list',
@@ -16,20 +38,15 @@ const PAGE_SIZE = 6;
   styleUrl: './quotes-list.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class QuotesListComponent {
+export class QuotesListComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
+  private readonly api = inject(ApiClient);
+  private readonly toast = inject(ToastService);
   private readonly query = toSignal(this.route.queryParamMap, { initialValue: null });
 
-  readonly quotes = signal<Quote[]>([
-    { id: 'q_0148', reference: 'Q-2026-0148', drawingName: 'bracket-rev-c.dxf', materialName: 'Mild steel 3.0 mm', thicknessMm: 3, quantity: 24, bendCount: 2, sheetCount: 1, utilisation: 0.295, cutLengthMm: 1268.4, totalCents: 27840, status: 'quoted', createdAt: '2026-09-05T09:14:00Z' },
-    { id: 'q_0147', reference: 'Q-2026-0147', drawingName: 'gusset-plate.dxf', materialName: 'Mild steel 1.5 mm', thicknessMm: 1.5, quantity: 120, bendCount: 0, sheetCount: 2, utilisation: 0.61, cutLengthMm: 642.0, totalCents: 51260, status: 'ordered', createdAt: '2026-09-03T15:41:00Z' },
-    { id: 'q_0146', reference: 'Q-2026-0146', drawingName: 'enclosure-lid.dxf', materialName: 'Aluminium 5052 2.0 mm', thicknessMm: 2, quantity: 40, bendCount: 4, sheetCount: 2, utilisation: 0.48, cutLengthMm: 1890.5, totalCents: 84320, status: 'quoted', createdAt: '2026-09-02T11:02:00Z' },
-    { id: 'q_0145', reference: 'Q-2026-0145', drawingName: 'mount-arm.dxf', materialName: 'Stainless 304 1.2 mm', thicknessMm: 1.2, quantity: 8, bendCount: 3, sheetCount: 1, utilisation: 0.12, cutLengthMm: 980.2, totalCents: 19400, status: 'expired', createdAt: '2026-08-21T08:30:00Z' },
-    { id: 'q_0144', reference: 'Q-2026-0144', drawingName: 'cover-panel.dxf', materialName: 'Mild steel 1.5 mm', thicknessMm: 1.5, quantity: 60, bendCount: 1, sheetCount: 1, utilisation: 0.72, cutLengthMm: 1120.9, totalCents: 39960, status: 'ordered', createdAt: '2026-08-19T13:55:00Z' },
-    { id: 'q_0143', reference: 'Q-2026-0143', drawingName: 'spacer-ring.dxf', materialName: 'Aluminium 5052 2.0 mm', thicknessMm: 2, quantity: 200, bendCount: 0, sheetCount: 3, utilisation: 0.55, cutLengthMm: 386.4, totalCents: 68210, status: 'quoted', createdAt: '2026-08-14T10:11:00Z' },
-    { id: 'q_0142', reference: 'Q-2026-0142', drawingName: 'clip-bracket.dxf', materialName: 'Mild steel 3.0 mm', thicknessMm: 3, quantity: 15, bendCount: 2, sheetCount: 1, utilisation: 0.19, cutLengthMm: 744.0, totalCents: 22150, status: 'draft', createdAt: '2026-08-11T16:20:00Z' },
-  ]);
+  /** The signed-in customer's quotes, newest first, straight from the API. */
+  readonly quotes = signal<Quote[]>([]);
 
   readonly statuses: { value: string; label: string }[] = [
     { value: 'all', label: 'All' },
@@ -65,6 +82,21 @@ export class QuotesListComponent {
     const start = (Math.min(this.page(), this.pageCount()) - 1) * PAGE_SIZE;
     return this.filtered().slice(start, start + PAGE_SIZE);
   });
+
+  ngOnInit(): void {
+    void this.load();
+  }
+
+  /** A failure leaves the list empty and says so — never a stand-in row. */
+  private async load(): Promise<void> {
+    try {
+      const records = await this.api.get<QuoteRecord[]>('/quotes');
+      this.quotes.set(records.map(toQuote));
+    } catch (error) {
+      this.quotes.set([]);
+      this.toast.show(errorMessage(error, 'We could not load your quotes.'), 'danger');
+    }
+  }
 
   setStatus(status: string): void {
     this.patch({ status: status === 'all' ? null : status, page: null });

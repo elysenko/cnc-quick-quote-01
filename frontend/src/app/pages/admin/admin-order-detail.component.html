@@ -3,11 +3,11 @@
     <div class="page-head__text">
       <p class="eyebrow"><a routerLink="/admin/orders" data-testid="admin-order-back">← All orders</a></p>
       <h1 class="page-title mono" data-testid="admin-order-number">{{ orderNumber() }}</h1>
-      <p class="page-sub">Paid {{ dateTime('2026-09-05T09:22:00Z') }} · created by the payment webhook</p>
+      <p class="page-sub">Paid {{ dateTime(placedAt()) }} · created by the payment webhook</p>
     </div>
     <div class="row">
-      <span class="badge badge--info">Paid</span>
-      <a class="btn btn--ghost btn--sm" href="#" data-testid="admin-order-receipt">
+      <span class="badge badge--info">{{ statusLabel() }}</span>
+      <a class="btn btn--ghost btn--sm" href="#" (click)="downloadReceipt($event)" data-testid="admin-order-receipt">
         <app-icon name="download" [size]="15" /> Receipt
       </a>
     </div>
@@ -19,10 +19,10 @@
         <div class="card__head"><h2 class="card__title">Customer</h2></div>
         <div class="card__body">
           <div class="data-list">
-            <div class="data-list__row"><span class="data-list__key">Name</span><span class="data-list__val">Jordan Reyes</span></div>
-            <div class="data-list__row"><span class="data-list__key">Email</span><span class="data-list__val">j.reyes&#64;northgate-eng.com</span></div>
-            <div class="data-list__row"><span class="data-list__key">Company</span><span class="data-list__val">Northgate Engineering</span></div>
-            <div class="data-list__row"><span class="data-list__key">Delivery</span><span class="data-list__val">Standard freight · 5 days</span></div>
+            <div class="data-list__row"><span class="data-list__key">Name</span><span class="data-list__val">{{ customerName() }}</span></div>
+            <div class="data-list__row"><span class="data-list__key">Email</span><span class="data-list__val">{{ customerEmail() }}</span></div>
+            <div class="data-list__row"><span class="data-list__key">Company</span><span class="data-list__val">{{ customerCompany() }}</span></div>
+            <div class="data-list__row"><span class="data-list__key">Delivery</span><span class="data-list__val">{{ deliveryLabel() }}</span></div>
           </div>
         </div>
       </div>
@@ -31,11 +31,11 @@
         <div class="card__head"><h2 class="card__title">Job</h2></div>
         <div class="card__body">
           <div class="data-list">
-            <div class="data-list__row"><span class="data-list__key">From quote</span><span class="data-list__val">Q-2026-0148</span></div>
-            <div class="data-list__row"><span class="data-list__key">Drawing</span><span class="data-list__val">bracket-rev-c.dxf</span></div>
+            <div class="data-list__row"><span class="data-list__key">From quote</span><span class="data-list__val">{{ quoteRef() }}</span></div>
+            <div class="data-list__row"><span class="data-list__key">Drawing</span><span class="data-list__val">{{ drawingName() }}</span></div>
             <div class="data-list__row"><span class="data-list__key">Material</span><span class="data-list__val">{{ material().name }}</span></div>
             <div class="data-list__row"><span class="data-list__key">Quantity</span><span class="data-list__val">{{ quantity() }}</span></div>
-            <div class="data-list__row"><span class="data-list__key">Stripe session</span><span class="data-list__val mono">cs_test_a1b2c3d4</span></div>
+            <div class="data-list__row"><span class="data-list__key">Stripe session</span><span class="data-list__val mono">{{ stripeSessionId() }}</span></div>
           </div>
         </div>
       </div>
@@ -46,9 +46,10 @@
           <div class="field">
             <label class="field__label" for="order-notes">Internal note</label>
             <textarea id="order-notes" class="textarea" data-testid="admin-order-notes"
+                      [value]="note()" (input)="note.set($any($event.target).value)"
                       placeholder="Nest with the Harbourworks job on Thursday's sheet."></textarea>
           </div>
-          <button type="button" class="btn btn--primary" data-testid="admin-order-save-note">Save note</button>
+          <button type="button" class="btn btn--primary" (click)="saveNote()" data-testid="admin-order-save-note">Save note</button>
         </div>
       </div>
     </section>
@@ -64,7 +65,7 @@
         <app-cost-breakdown
           [lines]="price().lines"
           [subtotalCents]="price().subtotalCents"
-          [totalCents]="price().totalCents + 2400"
+          [totalCents]="totalPaidCents()"
           [minimumApplied]="price().minimumApplied"
           [minimumCents]="pricing().minimumOrderCents"
           totalLabel="Total paid"

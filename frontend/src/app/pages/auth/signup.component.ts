@@ -21,20 +21,31 @@ export class SignupComponent {
   readonly password = signal('');
   readonly confirm = signal('');
   readonly error = signal<string | null>(null);
+  readonly submitting = signal(false);
 
   readonly previewShortcut = COLOSSUS_PREVIEW ? 'Skip signup — Demo Mode' : null;
 
-  submit(event: Event): void {
+  async submit(event: Event): Promise<void> {
     event.preventDefault();
+    if (this.submitting()) return;
+
     if (this.password() !== this.confirm()) {
       this.error.set('Those passwords do not match.');
       return;
     }
-    const { error } = this.auth.signup(this.name(), this.email(), this.password());
-    this.error.set(error);
+
+    this.submitting.set(true);
+    this.error.set(null);
+    try {
+      const { error } = await this.auth.signup(this.name(), this.email(), this.password());
+      this.error.set(error);
+    } finally {
+      this.submitting.set(false);
+    }
   }
 
+  // Retained because the template references it inside a preview-only block.
   demoSignIn(): void {
-    this.auth.previewSignIn('USER');
+    /* no production behaviour — the button is compiled out of the real build */
   }
 }

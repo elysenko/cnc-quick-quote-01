@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, computed, inject } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { BendEditorCanvasComponent } from '../../canvas/bend-editor-canvas.component';
@@ -16,12 +16,11 @@ import { ToastService } from '../../shared/toast.service';
   styleUrl: './bend-step.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class BendStepComponent {
+export class BendStepComponent implements OnInit {
   private readonly draft = inject(QuoteDraftService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly toast = inject(ToastService);
-  private nextId = 100;
 
   private readonly query = toSignal(this.route.queryParamMap, { initialValue: null });
 
@@ -33,22 +32,37 @@ export class BendStepComponent {
   readonly selectedId = computed(() => this.query()?.get('bend') ?? null);
   readonly selected = computed(() => this.bends().find((b) => b.id === this.selectedId()) ?? null);
 
-  readonly partWidth = computed(() => this.drawing()?.bboxWidthMm ?? 240);
-  readonly partHeight = computed(() => this.drawing()?.bboxHeightMm ?? 160);
+  readonly partWidth = computed(() => this.drawing()?.bboxWidthMm ?? 0);
+  readonly partHeight = computed(() => this.drawing()?.bboxHeightMm ?? 0);
+
+  ngOnInit(): void {
+    const drawingId = this.drawing()?.id;
+    if (drawingId) void this.draft.loadBends(drawingId);
+  }
 
   select(id: string | null): void {
-    this.router.navigate([], {
+    void this.router.navigate([], {
       relativeTo: this.route,
       queryParams: { bend: id },
       queryParamsHandling: 'merge',
     });
   }
 
-  create(coords: { x1: number; y1: number; x2: number; y2: number }): void {
-    const id = `bnd_${this.nextId++}`;
-    this.draft.addBend({
-      id,
-      drawingId: this.drawing()?.id ?? 'drw_8f21',
+  /**
+   * Adds the bend optimistically under a temporary id so the canvas responds to
+   * the drag immediately, then swaps in the server's row once it is persisted.
+   */
+  async create(coords: { x1: number; y1: number; x2: number; y2: number }): Promise<void> {
+    const drawingId = this.drawing()?.id;
+    if (!drawingId) {
+      this.toast.show('Upload a drawing before adding bend lines', 'danger');
+      return;
+    }
+
+    const temporaryId = `pending-${Date.now()}`;
+    const saved = await this.draft.addBend({
+      id: temporaryId,
+      drawingId,
       x1: Math.round(coords.x1),
       y1: Math.round(coords.y1),
       x2: Math.round(coords.x2),
@@ -56,12 +70,17 @@ export class BendStepComponent {
       angleDeg: 90,
       direction: 'up',
     });
-    this.select(id);
+
+    if (!saved) {
+      this.toast.show('That bend line could not be saved', 'danger');
+      return;
+    }
+    this.select(saved.id);
     this.toast.show('Bend line added', 'success');
   }
 
   move(next: { id: string; x1: number; y1: number; x2: number; y2: number }): void {
-    this.draft.updateBend(next.id, {
+    void this.draft.updateBend(next.id, {
       x1: Math.round(next.x1),
       y1: Math.round(next.y1),
       x2: Math.round(next.x2),
@@ -73,22 +92,22 @@ export class BendStepComponent {
     const id = this.selectedId();
     const angle = Number(value);
     if (!id || Number.isNaN(angle)) return;
-    this.draft.updateBend(id, { angleDeg: Math.min(180, Math.max(0, angle)) });
+    void this.draft.updateBend(id, { angleDeg: Math.min(180, Math.max(0, angle)) });
   }
 
   setDirection(direction: BendDirection): void {
     const id = this.selectedId();
-    if (id) this.draft.updateBend(id, { direction });
+    if (id) void this.draft.updateBend(id, { direction });
   }
 
-  remove(id: string): void {
-    this.draft.removeBend(id);
+  async remove(id: string): Promise<void> {
+    await this.draft.removeBend(id);
     if (this.selectedId() === id) this.select(null);
     this.toast.show('Bend line removed');
   }
 
   bendLength(id: string): number {
-    const b = this.bends().find((x) => x.id === id);
-    return b ? Math.round(Math.hypot(b.x2 - b.x1, b.y2 - b.y1)) : 0;
+    const bend = this.bends().find((b) => b.id === id);
+    return bend ? Math.round(Math.hypot(bend.x2 - bend.x1, bend.y2 - bend.y1)) : 0;
   }
 }

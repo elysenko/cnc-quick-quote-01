@@ -23,7 +23,7 @@
             <span class="dropzone__icon"><app-icon name="upload" [size]="28" /></span>
             <h3 class="dropzone__title">Drop your DXF here</h3>
             <p class="dropzone__desc">We read every LINE, ARC, CIRCLE and polyline to measure the true cut length.</p>
-            <button type="button" class="btn btn--primary" data-testid="upload-choose-file" (click)="simulateUpload()">
+            <button type="button" class="btn btn--primary" data-testid="upload-choose-file" (click)="chooseFile()">
               Choose a file
             </button>
             <button type="button" class="btn btn--subtle btn--sm" data-testid="upload-show-error" (click)="showParseError()">
@@ -34,7 +34,7 @@
 
         @case ('uploading') {
           <div class="uploading" data-testid="upload-progress">
-            <p class="muted">Uploading and parsing <strong>bracket-rev-c.dxf</strong>…</p>
+            <p class="muted">Uploading and parsing <strong>{{ uploadingName() }}</strong>…</p>
             <div class="bar" role="progressbar" [attr.aria-valuenow]="progress()" aria-valuemin="0" aria-valuemax="100">
               <span class="bar__fill" [style.width.%]="progress()"></span>
             </div>
@@ -46,7 +46,7 @@
           <div class="notice notice--danger" role="alert" data-testid="upload-parse-error">
             <div class="notice__body">
               <strong>We could not read that drawing</strong>
-              The file contained no supported geometry (422). Nothing was stored. Export a flat DXF
+              {{ parseError() || 'The file contained no supported geometry (422).' }} Nothing was stored. Export a flat DXF
               from your CAD package with LINE, ARC, CIRCLE or polyline entities and try again.
             </div>
           </div>

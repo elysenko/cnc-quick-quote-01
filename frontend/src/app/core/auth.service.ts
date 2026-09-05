@@ -1,9 +1,17 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { SessionUser, Role } from './models';
+import { ApiClient, errorMessage } from './api';
 import { readJson, removeKey, writeJson } from './storage';
 
 const USER_KEY = 'user';
+
+interface SessionResponse {
+  accessToken: string;
+  refreshToken: string;
+  expiresIn: number;
+  user: { id: string; email: string; name: string | null; role: Role; company: string | null };
+}
 
 function isSessionUser(value: unknown): value is SessionUser {
   if (typeof value !== 'object' || value === null) return false;
@@ -23,41 +31,57 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   private readonly router = inject(Router);
+  private readonly api = inject(ApiClient);
 
   private readonly _user = signal<SessionUser | null>(this.restore());
+  private readonly _ready = signal(false);
 
   readonly user = this._user.asReadonly();
+  /** False until the stored session has been revalidated against the API. */
+  readonly ready = this._ready.asReadonly();
   readonly isAuthenticated = computed(() => this._user() !== null);
   readonly isAdmin = computed(() => {
     const role = this._user()?.role;
     return role === 'ADMIN' || role === 'MANAGER';
   });
 
-  /** Restores the session defensively — never throws, never blanks the page. */
+  /**
+   * Restores the cached profile so a reload paints the right shell immediately.
+   * The refresh token is the real credential — `restoreSession()` confirms it
+   * against the API and clears the cache if it has expired.
+   */
   private restore(): SessionUser | null {
     try {
-      const stored = readJson<SessionUser>(USER_KEY, isSessionUser);
-      if (stored) return stored;
+      return readJson<SessionUser>(USER_KEY, isSessionUser);
     } catch {
       removeKey(USER_KEY);
+      return null;
     }
-    if (COLOSSUS_PREVIEW) {
-      // The static preview has no API, so a cold load of an authenticated route
-      // renders that screen rather than bouncing the reviewer to /login. Staff
-      // sign in through the same form, so the default session is the admin one
-      // and every screen — customer and admin — is reachable from the nav.
-      return this.demoUser('ADMIN');
-    }
-    return null;
   }
 
-  private demoUser(role: Role): SessionUser {
-    return role === 'ADMIN'
-      ? { id: 'u-admin', email: 'ops@meridianfab.com', name: 'Dana Okafor', role: 'ADMIN', company: 'Meridian Fabrication' }
-      : { id: 'u-1', email: 'j.reyes@northgate-eng.com', name: 'Jordan Reyes', role: 'USER', company: 'Northgate Engineering' };
+  /**
+   * Called once during app initialisation: exchanges the persisted refresh
+   * token for a live access token so a returning visitor is not bounced to the
+   * sign-in screen.
+   */
+  async restoreSession(): Promise<void> {
+    const refreshToken = this.api.refreshToken;
+    if (!refreshToken) {
+      this.clear();
+      this._ready.set(true);
+      return;
+    }
+    try {
+      const session = await this.api.post<SessionResponse>('/auth/refresh', { refreshToken });
+      this.applySession(session);
+    } catch {
+      this.clear();
+    } finally {
+      this._ready.set(true);
+    }
   }
 
-  /** Validation shared by both the preview and production paths. */
+  /** Client-side pre-checks; the server re-validates everything regardless. */
   validate(email: string, password: string): string | null {
     if (!email.trim() || !password) return 'Enter your email address and password.';
     if (!EMAIL_RE.test(email.trim())) return 'Enter a valid email address.';
@@ -65,66 +89,84 @@ export class AuthService {
     return null;
   }
 
-  /**
-   * Signs in. In the preview build this resolves locally and synchronously —
-   * there is no API server behind the static host, so an awaited network call
-   * would strand the reviewer on the login screen.
-   */
-  login(email: string, password: string): { error: string | null } {
-    const error = this.validate(email, password);
-    if (error) return { error };
+  async login(email: string, password: string): Promise<{ error: string | null }> {
+    const invalid = this.validate(email, password);
+    if (invalid) return { error: invalid };
 
-    if (COLOSSUS_PREVIEW) {
-      const trimmed = email.trim().toLowerCase();
-      const looksAdmin = /admin|ops|owner|staff/.test(trimmed);
-      const user: SessionUser = looksAdmin
-        ? { ...this.demoUser('ADMIN'), email: trimmed }
-        : { ...this.demoUser('USER'), email: trimmed };
-      this.setSession(user);
-      this.router.navigate([user.role === 'USER' ? '/quotes' : '/admin']);
+    try {
+      const session = await this.api.post<SessionResponse>('/auth/login', {
+        email: email.trim(),
+        password,
+      });
+      this.applySession(session);
+      this.routeAfterAuth(session.user.role);
       return { error: null };
+    } catch (error) {
+      return { error: errorMessage(error, 'We could not sign you in. Please try again.') };
     }
-
-    // Production path — the service layer replaces this with the real tRPC call.
-    this.router.navigate(['/quotes']);
-    return { error: null };
   }
 
-  signup(name: string, email: string, password: string): { error: string | null } {
-    const error = this.validate(email, password);
-    if (error) return { error };
+  async signup(
+    name: string,
+    email: string,
+    password: string,
+  ): Promise<{ error: string | null }> {
+    const invalid = this.validate(email, password);
+    if (invalid) return { error: invalid };
     if (!name.trim()) return { error: 'Enter your name.' };
 
-    if (COLOSSUS_PREVIEW) {
-      this.setSession({
-        id: 'u-new',
-        email: email.trim().toLowerCase(),
+    try {
+      const session = await this.api.post<SessionResponse>('/auth/register', {
         name: name.trim(),
-        role: 'USER',
-        company: 'Northgate Engineering',
+        email: email.trim(),
+        password,
       });
-      this.router.navigate(['/quote/new/upload']);
+      this.applySession(session);
+      void this.router.navigate([
+        session.user.role === 'USER' ? '/quote/new/upload' : '/admin',
+      ]);
       return { error: null };
+    } catch (error) {
+      return { error: errorMessage(error, 'We could not create your account.') };
     }
-    this.router.navigate(['/quotes']);
-    return { error: null };
   }
 
-  /** Preview-only shortcut used by the reviewer and by screenshot capture. */
-  previewSignIn(role: Role = 'USER'): void {
-    if (!COLOSSUS_PREVIEW) return;
-    this.setSession(this.demoUser(role));
-    this.router.navigate([role === 'USER' ? '/quotes' : '/admin']);
+  async logout(): Promise<void> {
+    const refreshToken = this.api.refreshToken;
+    this.clear();
+    void this.router.navigate(['/login']);
+    if (refreshToken) {
+      // Best effort: the local session is already gone, so a network failure
+      // here must not strand the user on a signed-in-looking screen.
+      try {
+        await this.api.post('/auth/logout', { refreshToken });
+      } catch {
+        /* ignored by design */
+      }
+    }
   }
 
-  setSession(user: SessionUser): void {
+  /** Staff land in the admin console; customers land on their quotes. */
+  private routeAfterAuth(role: Role): void {
+    void this.router.navigate([role === 'USER' ? '/quotes' : '/admin']);
+  }
+
+  private applySession(session: SessionResponse): void {
+    this.api.setTokens(session.accessToken, session.refreshToken);
+    const user: SessionUser = {
+      id: session.user.id,
+      email: session.user.email,
+      name: session.user.name ?? session.user.email,
+      role: session.user.role,
+      company: session.user.company ?? undefined,
+    };
     this._user.set(user);
     writeJson(USER_KEY, user);
   }
 
-  logout(): void {
+  private clear(): void {
     this._user.set(null);
+    this.api.clearTokens();
     removeKey(USER_KEY);
-    this.router.navigate(['/login']);
   }
 }

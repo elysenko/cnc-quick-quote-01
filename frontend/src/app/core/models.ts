@@ -108,6 +108,8 @@ export interface Order {
   id: string;
   orderNumber: string;
   quoteRef: string;
+  /** Stripe checkout session behind the charge; shown to staff for tracing. */
+  stripeSessionId: string;
   customerName: string;
   customerEmail: string;
   materialName: string;

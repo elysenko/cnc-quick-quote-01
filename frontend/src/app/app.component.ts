@@ -1,7 +1,6 @@
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { ToastHostComponent } from './shared/toast-host.component';
-import { BrandingService } from './core/branding.service';
 
 @Component({
   selector: 'app-root',
@@ -12,11 +11,6 @@ import { BrandingService } from './core/branding.service';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AppComponent {
-  private readonly branding = inject(BrandingService);
-
-  constructor() {
-    // Publishes branding tokens onto :root. In production this is driven by the
-    // public `branding` query resolved during app initialisation.
-    this.branding.apply({});
-  }
+  // Branding is resolved by the APP_INITIALIZER in app.config.ts, before this
+  // component renders, so there is no unbranded first paint to correct here.
 }

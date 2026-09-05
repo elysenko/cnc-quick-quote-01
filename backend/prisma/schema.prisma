@@ -14,8 +14,14 @@ model User {
   /// bcryptjs hash (BCRYPT_ROUNDS in prisma/seed/seed.js and the auth service). Never store plaintext.
   passwordHash String
   role         Role     @default(USER)
+  company      String?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+
+  refreshTokens RefreshToken[]
+  drawings      Drawing[]
+  quotes        Quote[]
+  orders        Order[]
 }
 
 /// One value per role the stack contract declares (stacks/combos/enterprise.json auth.roles).
@@ -40,4 +46,197 @@ model ColossusAccount {
   updatedAt    DateTime @updatedAt @map("updated_at")
 
   @@map("colossus_accounts")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CNC Quick Quote domain
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// Rotating refresh-token registry. One row per issued refresh JWT (`jti`);
+/// logout/rotation stamps `revokedAt` so a replayed token is rejected.
+model RefreshToken {
+  id        String    @id @default(uuid())
+  jti       String    @unique
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
+  @@map("refresh_tokens")
+}
+
+/// Sheet stock the workshop offers. Deactivating removes it from customer lists
+/// immediately but leaves historic quotes intact (they carry a pricing snapshot).
+model Material {
+  id                String   @id @default(uuid())
+  name              String
+  thicknessMm       Float
+  costPerFtCents    Int
+  costMultiplier    Float    @default(1)
+  sheetWidthMm      Float
+  sheetHeightMm     Float
+  perSheetCostCents Int
+  active            Boolean  @default(true)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  quotes Quote[]
+
+  @@index([active])
+  @@map("materials")
+}
+
+/// An uploaded CAD drawing plus the geometry parsed from it at upload time.
+/// `polylines` is the flattened outline (mm, part-local) the canvas renders and
+/// the pricing engine measures; storing it makes quoting pure arithmetic.
+model Drawing {
+  id              String   @id @default(uuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  filename        String
+  objectKey       String
+  sizeBytes       Int
+  cutLengthMm     Float
+  bboxWidthMm     Float
+  bboxHeightMm    Float
+  entityCount     Int      @default(0)
+  skippedEntities Int      @default(0)
+  polylines       Json
+  createdAt       DateTime @default(now())
+
+  bendLines BendLine[]
+  quotes    Quote[]
+
+  @@index([userId, createdAt])
+  @@map("drawings")
+}
+
+/// Bend annotations are metadata only — the stored DXF object is never rewritten.
+model BendLine {
+  id        String   @id @default(uuid())
+  drawingId String
+  drawing   Drawing  @relation(fields: [drawingId], references: [id], onDelete: Cascade)
+  x1        Float
+  y1        Float
+  x2        Float
+  y2        Float
+  angleDeg  Float
+  direction String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([drawingId])
+  @@map("bend_lines")
+}
+
+/// A priced quote. `pricingSnapshot` freezes the admin configuration in force at
+/// generation time; orders read the snapshot, never live config.
+model Quote {
+  id              String   @id @default(uuid())
+  reference       String   @unique
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  drawingId       String
+  drawing         Drawing  @relation(fields: [drawingId], references: [id], onDelete: Cascade)
+  materialId      String
+  material        Material @relation(fields: [materialId], references: [id])
+  quantity        Int
+  bendCount       Int
+  sheetCount      Int
+  utilisation     Float
+  cutLengthMm     Float
+  nestingResult   Json
+  breakdown       Json
+  pricingSnapshot Json
+  totalCents      Int
+  status          String   @default("quoted")
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  orders Order[]
+
+  @@index([userId, createdAt])
+  @@map("quotes")
+}
+
+/// Delivery options offered at checkout. `flat` charges `costCents` once;
+/// `per_sheet` multiplies it by the quote's sheet count.
+model ShippingMethod {
+  id        String   @id @default(uuid())
+  name      String
+  kind      String   @default("flat")
+  costCents Int
+  etaDays   Int
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  orders Order[]
+
+  @@map("shipping_methods")
+}
+
+/// Created ONLY by the Stripe `checkout.session.completed` webhook. A declined
+/// card leaves the quote intact and creates nothing.
+model Order {
+  id                String          @id @default(uuid())
+  orderNumber       String          @unique
+  userId            String
+  user              User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  quoteId           String
+  quote             Quote           @relation(fields: [quoteId], references: [id])
+  shippingMethodId  String?
+  shippingMethod    ShippingMethod? @relation(fields: [shippingMethodId], references: [id])
+  shippingLabel     String
+  stripeSessionId   String          @unique
+  subtotalCents     Int
+  shippingCents     Int
+  totalCents        Int
+  status            String          @default("paid")
+  receiptObjectKey  String?
+  emailError        String?
+  /// Staff-only fulfilment note; never shown to the customer.
+  internalNote      String?
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+
+  @@index([userId, createdAt])
+  @@map("orders")
+}
+
+/// Singleton (`id = 1`) holding every admin-configurable group as JSON.
+model AppSettings {
+  id             Int      @id @default(1)
+  pricing        Json
+  machine        Json
+  upload         Json
+  branding       Json
+  contact        Json
+  payment        Json
+  shippingConfig Json
+  updatedAt      DateTime @updatedAt
+
+  @@map("app_settings")
+}
+
+/// Stripe webhook idempotency ledger — the unique id converges concurrent
+/// deliveries (and browser/webhook races) on exactly one order.
+model WebhookEvent {
+  stripeEventId String   @id
+  type          String
+  processedAt   DateTime @default(now())
+
+  @@map("webhook_events")
+}
+
+/// Runtime credential store behind `resolveConfig(key)`: env var wins, this row
+/// is the fallback, null means unconfigured (callers raise 503).
+model SystemSetting {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt
+
+  @@map("system_settings")
 }

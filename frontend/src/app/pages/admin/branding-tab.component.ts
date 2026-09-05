@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { IconComponent } from '../../shared/icon.component';
 import { BrandingService } from '../../core/branding.service';
 import { ToastService } from '../../shared/toast.service';
+import { errorMessage } from '../../core/api';
 
 @Component({
   selector: 'app-admin-branding-tab',
@@ -16,12 +17,18 @@ export class BrandingTabComponent {
   private readonly toast = inject(ToastService);
   readonly branding = this.service.branding;
 
+  /** Applies each keystroke to the shell so the preview is the real thing. */
   update(key: 'companyName' | 'tagline' | 'logoMark' | 'primaryColor' | 'accentColor', value: string): void {
     this.service.apply({ [key]: value });
   }
 
-  save(event: Event): void {
+  async save(event: Event): Promise<void> {
     event.preventDefault();
-    this.toast.show('Branding saved — applied across the site and emails', 'success');
+    try {
+      await this.service.save(this.branding());
+      this.toast.show('Branding saved — applied across the site and emails', 'success');
+    } catch (error) {
+      this.toast.show(errorMessage(error, 'We could not save the branding.'), 'danger');
+    }
   }
 }

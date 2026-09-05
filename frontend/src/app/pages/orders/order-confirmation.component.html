@@ -30,7 +30,7 @@
         </div>
 
         <div class="row confirm-actions">
-          <a class="btn btn--primary" href="#" data-testid="confirmation-receipt">
+          <a class="btn btn--primary" href="#" (click)="downloadReceipt($event)" data-testid="confirmation-receipt">
             <app-icon name="download" [size]="16" /> Download receipt
           </a>
           <a class="btn btn--ghost" routerLink="/orders" data-testid="confirmation-orders">View my orders</a>

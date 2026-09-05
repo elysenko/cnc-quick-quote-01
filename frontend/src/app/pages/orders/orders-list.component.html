@@ -46,7 +46,7 @@
             </div>
             <div class="orderrow__side">
               <span class="mono orderrow__total">{{ money(order.totalCents) }}</span>
-              <a class="btn btn--ghost btn--sm" href="#" [attr.data-testid]="'order-receipt-' + order.id">
+              <a class="btn btn--ghost btn--sm" href="#" (click)="downloadReceipt($event, order.id)" [attr.data-testid]="'order-receipt-' + order.id">
                 <app-icon name="download" [size]="15" /> Receipt
               </a>
             </div>

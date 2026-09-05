@@ -1,13 +1,14 @@
 {
   "ready_testid": "app-ready",
   "expect_text": [
-    "Sign in",
-    "Work email",
-    "Create an account"
+    "upload a drawing. get a real price in seconds",
+    "customers and workshop staff use the same sign-in",
+    "quick quote"
   ],
   "reject_signatures": [
     "home-title\">Users<",
     "Loading...",
-    "Failed to load users."
+    "Failed to load users.",
+    "Demo Mode"
   ]
 }

@@ -18,18 +18,24 @@ export class AccountComponent {
   private readonly brandingService = inject(BrandingService);
   private readonly toast = inject(ToastService);
 
+  /** The live session profile — the same record the API signed us in with. */
   readonly user = this.auth.user;
   readonly isAdmin = this.auth.isAdmin;
   readonly branding = this.brandingService.branding;
+  /** Stays false: nothing is saved until a profile endpoint exists. */
   readonly saved = signal(false);
 
   save(event: Event): void {
     event.preventDefault();
-    this.saved.set(true);
-    this.toast.show('Profile updated', 'success');
+    // There is no profile update endpoint yet, so say so rather than
+    // pretending the edit was stored.
+    this.toast.show(
+      `Profile editing isn't available yet — email ${this.branding().supportEmail} to change your details.`,
+      'info',
+    );
   }
 
-  logout(): void {
-    this.auth.logout();
+  async logout(): Promise<void> {
+    await this.auth.logout();
   }
 }

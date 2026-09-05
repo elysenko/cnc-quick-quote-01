@@ -1,22 +1,24 @@
-import { ApplicationConfig, InjectionToken } from '@angular/core';
+import { APP_INITIALIZER, ApplicationConfig, inject } from '@angular/core';
 import { provideRouter, withInMemoryScrolling } from '@angular/router';
 import { provideHttpClient } from '@angular/common/http';
 import { provideAnimations } from '@angular/platform-browser/animations';
-import { createTRPCClient, httpBatchLink } from '@trpc/client';
-import type { AppRouterClient } from './trpc-client.types';
 import { routes } from './app.routes';
+import { AuthService } from './core/auth.service';
+import { BrandingService } from './core/branding.service';
 
 /**
- * Typed tRPC client injection token.
- *
- * We use the InjectionToken pattern rather than ngx-trpc's provider helper
- * because it gives us full type safety without coupling to ngx-trpc's
- * internal API. The client is typed by the frontend-local AppRouterClient
- * contract (trpc-client.types.ts) — NOT by importing backend source, which
- * would drag nestjs/prisma types into the frontend build (they do not exist
- * in this package's build context and fail compilation).
+ * Resolved before the first route activates, so the router's guards see a
+ * settled session and the sign-in screen paints already branded. Both calls
+ * swallow their own failures — a cold backend must still render the app rather
+ * than hang on a white screen.
  */
-export const TRPC_CLIENT = new InjectionToken<AppRouterClient>('TRPC_CLIENT');
+function bootstrapApp(): () => Promise<void> {
+  const auth = inject(AuthService);
+  const branding = inject(BrandingService);
+  return async () => {
+    await Promise.all([auth.restoreSession(), branding.load()]);
+  };
+}
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -27,19 +29,9 @@ export const appConfig: ApplicationConfig = {
     provideHttpClient(),
     provideAnimations(),
     {
-      provide: TRPC_CLIENT,
-      useFactory: () =>
-        // `any` router generic: the real AppRouter type lives in the backend
-        // package and is not importable here (split-package build). The cast
-        // to AppRouterClient restores full call-site type safety.
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        createTRPCClient<any>({
-          links: [
-            httpBatchLink({
-              url: '/trpc',
-            }),
-          ],
-        }) as unknown as AppRouterClient,
+      provide: APP_INITIALIZER,
+      useFactory: bootstrapApp,
+      multi: true,
     },
   ],
 };

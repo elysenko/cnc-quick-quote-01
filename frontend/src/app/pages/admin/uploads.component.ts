@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { IconComponent } from '../../shared/icon.component';
 import { QuoteDraftService } from '../../core/quote-draft.service';
 import { ToastService } from '../../shared/toast.service';
+import { ApiClient, errorMessage } from '../../core/api';
 import { UploadSettings } from '../../core/models';
 
 @Component({
@@ -13,10 +14,15 @@ import { UploadSettings } from '../../core/models';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class UploadsComponent {
+  private readonly api = inject(ApiClient);
   private readonly draft = inject(QuoteDraftService);
   private readonly toast = inject(ToastService);
 
   readonly uploads = this.draft.uploads;
+
+  constructor() {
+    void this.draft.loadReferenceData();
+  }
 
   setText(key: keyof UploadSettings, raw: string): void {
     this.uploads.update((u) => ({ ...u, [key]: raw }));
@@ -28,8 +34,14 @@ export class UploadsComponent {
     this.uploads.update((u) => ({ ...u, [key]: value }));
   }
 
-  save(event: Event): void {
+  async save(event: Event): Promise<void> {
     event.preventDefault();
-    this.toast.show('Upload limits saved — applied to the next upload', 'success');
+    try {
+      await this.api.put<unknown>('/admin/settings/upload', this.uploads());
+      await this.draft.loadReferenceData();
+      this.toast.show('Upload limits saved — applied to the next upload', 'success');
+    } catch (error) {
+      this.toast.show(errorMessage(error, 'We could not save the upload limits.'), 'danger');
+    }
   }
 }
