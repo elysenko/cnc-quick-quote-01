@@ -1,0 +1,94 @@
+<div class="page" data-flow="checkout-shipping" data-testid="checkout-shipping-page">
+  <div class="page-head">
+    <div class="page-head__text">
+      <p class="eyebrow">Checkout · Step 2 of 3</p>
+      <h1 class="page-title">Delivery</h1>
+      <p class="page-sub">Per-sheet rates are multiplied by the {{ nesting().sheetCount }} sheet(s) this job needs.</p>
+    </div>
+  </div>
+
+  <ol class="checkout-steps">
+    <li class="checkout-steps__item is-done">1. Review</li>
+    <li class="checkout-steps__item is-active">2. Shipping</li>
+    <li class="checkout-steps__item">3. Payment</li>
+  </ol>
+
+  @if (blocked()) {
+    <div class="card">
+      <app-empty-state
+        icon="truck"
+        testid="shipping-blocked"
+        title="No delivery options are configured"
+        description="We cannot price delivery for this order yet, so checkout is on hold rather than sending you an unpriced order."
+      >
+        <a class="btn btn--primary" [href]="'mailto:' + branding().supportEmail" data-testid="shipping-contact">
+          Email {{ branding().supportEmail }}
+        </a>
+        <a class="btn btn--subtle" [routerLink]="['/checkout', quoteId(), 'shipping']" data-testid="shipping-show-methods">
+          Show available methods
+        </a>
+      </app-empty-state>
+    </div>
+  } @else {
+    <div class="split">
+      <section class="card">
+        <div class="card__head"><h2 class="card__title">Choose a delivery method</h2></div>
+        <div class="card__body">
+          <ul class="methods" data-testid="shipping-methods">
+            @for (method of priced(); track method.id) {
+              <li>
+                <button
+                  type="button"
+                  class="method"
+                  [class.is-active]="method.id === selectedId()"
+                  [attr.data-testid]="'shipping-option-' + method.id"
+                  [attr.aria-pressed]="method.id === selectedId()"
+                  (click)="select(method.id)"
+                >
+                  <span class="method__radio" aria-hidden="true"></span>
+                  <span class="method__text">
+                    <span class="method__name">{{ method.name }}</span>
+                    <span class="method__meta muted text-sm">
+                      Arrives in about {{ method.etaDays }} working days ·
+                      {{ method.kind === 'per_sheet' ? 'per sheet rate' : 'flat rate' }}
+                    </span>
+                  </span>
+                  <span class="method__cost mono">
+                    {{ method.computedCents === 0 ? 'Free' : money(method.computedCents) }}
+                  </span>
+                </button>
+              </li>
+            }
+          </ul>
+
+          <a class="btn btn--subtle btn--sm blocked-link"
+             [routerLink]="['/checkout', quoteId(), 'shipping']"
+             [queryParams]="{ methods: 'none' }"
+             data-testid="shipping-preview-blocked">
+            Preview the no-methods-configured state
+          </a>
+        </div>
+      </section>
+
+      <aside class="card summary">
+        <div class="card__head"><h2 class="card__title">Order total</h2></div>
+        <div class="card__body">
+          <div class="data-list">
+            <div class="data-list__row"><span class="data-list__key">Parts</span><span class="data-list__val">{{ money(price().totalCents) }}</span></div>
+            <div class="data-list__row"><span class="data-list__key">{{ selected().name }}</span><span class="data-list__val" data-testid="shipping-cost">{{ money(selected().computedCents) }}</span></div>
+          </div>
+          <div class="grand">
+            <span>Total due</span>
+            <span class="mono" data-testid="shipping-grand-total">{{ money(grandTotal()) }}</span>
+          </div>
+        </div>
+        <div class="card__foot foot">
+          <a class="btn btn--primary btn--block" [routerLink]="['/checkout', quoteId(), 'payment']" data-testid="shipping-continue">
+            Continue to payment <app-icon name="chevron" [size]="16" />
+          </a>
+          <a class="btn btn--subtle btn--block" [routerLink]="['/checkout', quoteId(), 'review']" data-testid="shipping-back">Back to review</a>
+        </div>
+      </aside>
+    </div>
+  }
+</div>

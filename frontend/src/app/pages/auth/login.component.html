@@ -1,0 +1,92 @@
+<div class="auth" data-flow="auth-login" data-testid="login-page">
+  <aside class="auth__aside">
+    <div class="auth__brand">
+      <span class="auth__mark">{{ branding().logoMark }}</span>
+      <div>
+        <div class="brandline">{{ branding().companyName }}</div>
+        <div class="brandsub">Quick Quote</div>
+      </div>
+    </div>
+
+    <div class="auth__pitch">
+      <h2>Upload a drawing. Get a real price in seconds.</h2>
+      <p>{{ branding().tagline }}. Nesting, cut length and bend costs are computed from your DXF — no callbacks, no spreadsheets.</p>
+    </div>
+
+    <ul class="auth__points">
+      <li class="auth__point"><strong>1.</strong><span><strong>Upload</strong> your DXF and we measure every cut path.</span></li>
+      <li class="auth__point"><strong>2.</strong><span><strong>Mark bends</strong> on the drawing canvas.</span></li>
+      <li class="auth__point"><strong>3.</strong><span><strong>Pick material</strong> and quantity for an itemised quote.</span></li>
+      <li class="auth__point"><strong>4.</strong><span><strong>Pay securely</strong> and track the order.</span></li>
+    </ul>
+  </aside>
+
+  <div class="auth__main">
+    <div class="auth__card">
+      <p class="eyebrow">Welcome back</p>
+      <h1 class="page-title">Sign in</h1>
+      <p class="page-sub">Customers and workshop staff use the same sign-in.</p>
+
+      <form class="card form-card" (submit)="submit($event)" novalidate data-testid="login-form">
+        <div class="card__body">
+          @if (error()) {
+            <div class="notice notice--danger" role="alert" data-testid="login-error">
+              <div class="notice__body"><strong>We could not sign you in</strong>{{ error() }}</div>
+            </div>
+          }
+
+          <div class="field">
+            <label class="field__label" for="login-email">Work email</label>
+            <input
+              id="login-email"
+              class="input"
+              type="email"
+              name="email"
+              autocomplete="email"
+              inputmode="email"
+              placeholder="you@company.com"
+              data-testid="login-email"
+              [value]="email()"
+              (input)="email.set($any($event.target).value)"
+            />
+          </div>
+
+          <div class="field">
+            <label class="field__label" for="login-password">Password</label>
+            <input
+              id="login-password"
+              class="input"
+              type="password"
+              name="password"
+              autocomplete="current-password"
+              placeholder="••••••••"
+              data-testid="login-password"
+              [value]="password()"
+              (input)="password.set($any($event.target).value)"
+            />
+            <span class="field__hint">At least 8 characters.</span>
+          </div>
+
+          <button type="submit" class="btn btn--primary btn--block" data-testid="login-submit" [disabled]="submitting()">
+            Sign in
+          </button>
+
+          @if (previewShortcut) {
+            <div class="auth__demo demo-row">
+              <button type="button" class="btn btn--subtle btn--sm" data-testid="login-demo" (click)="demoSignIn()">
+                {{ previewShortcut }}
+              </button>
+              <button type="button" class="btn btn--subtle btn--sm" data-testid="login-demo-admin" (click)="demoAdminSignIn()">
+                Demo as admin
+              </button>
+            </div>
+          }
+        </div>
+      </form>
+
+      <p class="auth__foot">
+        New here? <a routerLink="/signup" data-testid="login-to-signup">Create an account</a>
+      </p>
+    </div>
+  </div>
+</div>

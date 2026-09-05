@@ -1,0 +1,9 @@
+<div data-flow="admin-business" data-testid="admin-business-page">
+  <nav class="subtabs" aria-label="Business settings" data-testid="business-tabs">
+    @for (tab of tabs; track tab.path) {
+      <a class="subtabs__link" [routerLink]="['/admin/business', tab.path]" routerLinkActive="is-active"
+         [attr.data-testid]="tab.testid">{{ tab.label }}</a>
+    }
+  </nav>
+  <router-outlet />
+</div>

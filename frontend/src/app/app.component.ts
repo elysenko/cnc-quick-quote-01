@@ -1,13 +1,22 @@
-import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
+import { ToastHostComponent } from './shared/toast-host.component';
+import { BrandingService } from './core/branding.service';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet],
-  // data-testid="app-ready" is the universal readiness landmark: it enters the DOM only
-  // after Angular bootstraps this root component, so the render gate can wait on it to
-  // confirm the SPA hydrated (not a blank shell / 404 / failed bundle). Keep it here.
-  template: `<div data-testid="app-ready"><router-outlet /></div>`,
+  standalone: true,
+  imports: [RouterOutlet, ToastHostComponent],
+  templateUrl: './app.component.html',
+  styleUrl: './app.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class AppComponent {}
+export class AppComponent {
+  private readonly branding = inject(BrandingService);
+
+  constructor() {
+    // Publishes branding tokens onto :root. In production this is driven by the
+    // public `branding` query resolved during app initialisation.
+    this.branding.apply({});
+  }
+}

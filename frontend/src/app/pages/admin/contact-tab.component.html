@@ -1,0 +1,43 @@
+<div class="split" data-flow="admin-business-contact" data-testid="contact-tab">
+  <form class="card" (submit)="save($event)" data-testid="contact-form">
+    <div class="card__head">
+      <div>
+        <h2 class="card__title">Contact details</h2>
+        <p class="card__desc">Shown on quotes, receipts and the blocked-checkout message.</p>
+      </div>
+    </div>
+    <div class="card__body">
+      <div class="field">
+        <label class="field__label" for="contact-email">Support email</label>
+        <input id="contact-email" class="input" type="email" inputmode="email" data-testid="contact-email"
+               [value]="branding().supportEmail" (input)="update('supportEmail', $any($event.target).value)" />
+      </div>
+      <div class="field">
+        <label class="field__label" for="contact-phone">Support phone</label>
+        <input id="contact-phone" class="input" type="tel" inputmode="tel" data-testid="contact-phone"
+               [value]="branding().supportPhone" (input)="update('supportPhone', $any($event.target).value)" />
+      </div>
+      <div class="field">
+        <label class="field__label" for="contact-address">Workshop address</label>
+        <textarea id="contact-address" class="textarea" data-testid="contact-address">{{ branding().addressLines.join('\n') }}</textarea>
+      </div>
+    </div>
+    <div class="card__foot">
+      <button type="submit" class="btn btn--primary" data-testid="contact-save">
+        <app-icon name="check" [size]="16" /> Save contact details
+      </button>
+    </div>
+  </form>
+
+  <aside class="card">
+    <div class="card__head"><h2 class="card__title">Receipt footer preview</h2></div>
+    <div class="card__body">
+      <div class="receipt" data-testid="contact-preview">
+        <strong>{{ branding().companyName }}</strong>
+        @for (line of branding().addressLines; track line) { <span>{{ line }}</span> }
+        <span>{{ branding().supportEmail }}</span>
+        <span>{{ branding().supportPhone }}</span>
+      </div>
+    </div>
+  </aside>
+</div>

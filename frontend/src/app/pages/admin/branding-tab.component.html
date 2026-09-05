@@ -1,0 +1,62 @@
+<div class="split" data-flow="admin-business-branding" data-testid="branding-tab">
+  <form class="card" (submit)="save($event)" data-testid="branding-form">
+    <div class="card__head">
+      <div>
+        <h2 class="card__title">Branding</h2>
+        <p class="card__desc">Applied live to the app shell, quotes, receipts and emails.</p>
+      </div>
+    </div>
+    <div class="card__body">
+      <div class="field">
+        <label class="field__label" for="brand-name">Company name</label>
+        <input id="brand-name" class="input" type="text" data-testid="branding-company-name"
+               [value]="branding().companyName" (input)="update('companyName', $any($event.target).value)" />
+      </div>
+      <div class="field">
+        <label class="field__label" for="brand-tagline">Tagline</label>
+        <input id="brand-tagline" class="input" type="text" data-testid="branding-tagline"
+               [value]="branding().tagline" (input)="update('tagline', $any($event.target).value)" />
+      </div>
+      <div class="grid grid--2">
+        <div class="field">
+          <label class="field__label" for="brand-mark">Logo mark (initials)</label>
+          <input id="brand-mark" class="input" type="text" maxlength="3" data-testid="branding-logo-mark"
+                 [value]="branding().logoMark" (input)="update('logoMark', $any($event.target).value)" />
+        </div>
+        <div class="field">
+          <label class="field__label" for="brand-primary">Primary colour</label>
+          <input id="brand-primary" class="input color" type="color" data-testid="branding-primary-color"
+                 [value]="branding().primaryColor" (input)="update('primaryColor', $any($event.target).value)" />
+        </div>
+        <div class="field">
+          <label class="field__label" for="brand-accent">Accent colour</label>
+          <input id="brand-accent" class="input color" type="color" data-testid="branding-accent-color"
+                 [value]="branding().accentColor" (input)="update('accentColor', $any($event.target).value)" />
+        </div>
+      </div>
+    </div>
+    <div class="card__foot">
+      <button type="submit" class="btn btn--primary" data-testid="branding-save">
+        <app-icon name="palette" [size]="16" /> Save branding
+      </button>
+    </div>
+  </form>
+
+  <aside class="card">
+    <div class="card__head"><h2 class="card__title">Preview</h2></div>
+    <div class="card__body">
+      <div class="preview" data-testid="branding-preview">
+        <span class="preview__mark">{{ branding().logoMark }}</span>
+        <div>
+          <div class="preview__name">{{ branding().companyName }}</div>
+          <div class="preview__tag">{{ branding().tagline }}</div>
+        </div>
+      </div>
+      <div class="row swatches">
+        <span class="swatch swatch--primary"></span>
+        <span class="swatch swatch--accent"></span>
+        <span class="muted text-sm">Cut paths use the primary colour, bend lines the accent.</span>
+      </div>
+    </div>
+  </aside>
+</div>

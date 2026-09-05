@@ -1,0 +1,96 @@
+<div data-flow="admin-materials" data-testid="admin-materials-page">
+  <div class="card">
+    <div class="card__head">
+      <div>
+        <h2 class="card__title">Materials</h2>
+        <p class="card__desc">Retiring a material removes it from the customer dropdown immediately.</p>
+      </div>
+      <button type="button" class="btn btn--primary" data-testid="materials-new" (click)="openNew()">
+        <app-icon name="plus" [size]="16" /> Add material
+      </button>
+    </div>
+
+    <div class="table-wrap">
+      <table class="table" data-testid="materials-table">
+        <thead>
+          <tr>
+            <th scope="col">Material</th>
+            <th scope="col">Thickness</th>
+            <th scope="col">Sheet size</th>
+            <th scope="col" class="text-right">Cut / ft</th>
+            <th scope="col" class="text-right">Sheet cost</th>
+            <th scope="col" class="text-right">Multiplier</th>
+            <th scope="col">Status</th>
+            <th scope="col"><span class="visually-hidden">Actions</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (mat of materials(); track mat.id) {
+            <tr [attr.data-testid]="'material-row-' + mat.id">
+              <td><strong>{{ mat.name }}</strong></td>
+              <td class="mono">{{ mat.thicknessMm }} mm</td>
+              <td class="mono">{{ mat.sheetWidthMm }} × {{ mat.sheetHeightMm }}</td>
+              <td class="mono text-right">{{ money(mat.costPerFtCents) }}</td>
+              <td class="mono text-right">{{ money(mat.perSheetCostCents) }}</td>
+              <td class="mono text-right">{{ mat.costMultiplier.toFixed(2) }}</td>
+              <td>
+                <span [class]="mat.active ? 'badge badge--success' : 'badge'">{{ mat.active ? 'Active' : 'Retired' }}</span>
+              </td>
+              <td class="text-right nowrap">
+                <button type="button" class="btn btn--ghost btn--sm" [attr.data-testid]="'material-edit-' + mat.id" (click)="openEdit(mat.id)">Edit</button>
+                <button type="button" class="btn btn--subtle btn--sm" [attr.data-testid]="'material-toggle-' + mat.id" (click)="toggleActive(mat.id)">
+                  {{ mat.active ? 'Retire' : 'Restore' }}
+                </button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <app-modal [open]="showNew()" title="Add a material" description="It becomes quotable as soon as you save."
+             testid="material-new-modal" (closed)="close()">
+    <form (submit)="createMaterial($event)">
+      <div class="field">
+        <label class="field__label" for="new-material-name">Name</label>
+        <input id="new-material-name" class="input" type="text" placeholder="Galvanised steel 2.0 mm"
+               data-testid="material-new-name" [value]="draftName()" (input)="draftName.set($any($event.target).value)" />
+      </div>
+      <div class="field">
+        <label class="field__label" for="new-material-thickness">Thickness (mm)</label>
+        <input id="new-material-thickness" class="input" type="number" step="0.1" min="0.1"
+               data-testid="material-new-thickness" [value]="draftThickness()" (input)="draftThickness.set($any($event.target).value)" />
+      </div>
+      <button type="submit" class="btn btn--primary btn--block" data-testid="material-new-save">Add material</button>
+    </form>
+  </app-modal>
+
+  <app-modal [open]="!!editing()" [title]="'Edit ' + (editing()?.name || '')"
+             description="Changes apply to new quotes only — existing quotes keep their locked price."
+             testid="material-edit-modal" (closed)="close()">
+    @if (editing(); as mat) {
+      <form (submit)="saveEdit($event)">
+        <div class="field">
+          <label class="field__label" for="edit-material-name">Name</label>
+          <input id="edit-material-name" class="input" type="text" data-testid="material-edit-name" [value]="mat.name" />
+        </div>
+        <div class="grid grid--2">
+          <div class="field">
+            <label class="field__label" for="edit-material-cut">Cut cost per foot (cents)</label>
+            <input id="edit-material-cut" class="input mono" type="number" data-testid="material-edit-cut" [value]="mat.costPerFtCents" />
+          </div>
+          <div class="field">
+            <label class="field__label" for="edit-material-sheet">Sheet cost (cents)</label>
+            <input id="edit-material-sheet" class="input mono" type="number" data-testid="material-edit-sheet" [value]="mat.perSheetCostCents" />
+          </div>
+        </div>
+        <div class="field">
+          <label class="field__label" for="edit-material-mult">Cost multiplier</label>
+          <input id="edit-material-mult" class="input mono" type="number" step="0.05" data-testid="material-edit-multiplier" [value]="mat.costMultiplier" />
+        </div>
+        <button type="submit" class="btn btn--primary btn--block" data-testid="material-edit-save">Save material</button>
+      </form>
+    }
+  </app-modal>
+</div>

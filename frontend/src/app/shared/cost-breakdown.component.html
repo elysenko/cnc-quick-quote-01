@@ -1,0 +1,33 @@
+<div class="breakdown" data-testid="cost-breakdown">
+  <ul class="breakdown__lines">
+    @for (line of lines; track line.key) {
+      <li class="breakdown__line" [attr.data-testid]="'breakdown-line-' + line.key">
+        <span class="breakdown__text">
+          <span class="breakdown__label">{{ line.label }}</span>
+          <span class="breakdown__detail">{{ line.detail }}</span>
+        </span>
+        <span class="breakdown__amount mono" [attr.data-testid]="'breakdown-amount-' + line.key">
+          {{ money(line.amountCents) }}
+        </span>
+      </li>
+    }
+  </ul>
+
+  @if (subtotalCents !== null) {
+    <div class="breakdown__sub">
+      <span>Subtotal</span>
+      <span class="mono" data-testid="breakdown-subtotal">{{ money(subtotalCents) }}</span>
+    </div>
+  }
+
+  @if (minimumApplied) {
+    <p class="breakdown__note" data-testid="breakdown-minimum-note">
+      Minimum order of {{ money(minimumCents) }} applied.
+    </p>
+  }
+
+  <div class="breakdown__total">
+    <span>{{ totalLabel }}</span>
+    <span class="mono" data-testid="breakdown-total">{{ money(totalCents) }}</span>
+  </div>
+</div>

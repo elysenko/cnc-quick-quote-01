@@ -1,0 +1,42 @@
+<div class="page narrow" data-flow="order-confirmation" data-testid="order-confirmation-page">
+  @if (!ready()) {
+    <div class="card" data-testid="confirmation-pending">
+      <div class="card__body pending">
+        <span class="spinner" aria-hidden="true"></span>
+        <h1 class="page-title">Confirming your payment…</h1>
+        <p class="page-sub">
+          We're waiting for the payment provider to confirm session
+          <span class="mono">{{ sessionId() }}</span>. This usually takes a few seconds — you can
+          safely leave this page, your receipt will be emailed either way.
+        </p>
+        <a class="btn btn--ghost" routerLink="/orders" data-testid="confirmation-view-orders">View my orders</a>
+      </div>
+    </div>
+  } @else {
+    <div class="card" data-testid="confirmation-success">
+      <div class="card__body success">
+        <span class="tick"><app-icon name="check" [size]="30" /></span>
+        <p class="eyebrow">Payment received</p>
+        <h1 class="page-title">Order <span class="mono" data-testid="confirmation-order-number">{{ orderNumber }}</span> is in</h1>
+        <p class="page-sub">
+          Thanks — {{ branding().companyName }} has your job. A confirmation email with the PDF
+          receipt is on its way.
+        </p>
+
+        <div class="data-list confirm-list">
+          <div class="data-list__row"><span class="data-list__key">Parts</span><span class="data-list__val">{{ quantity() }} × {{ material().name }}</span></div>
+          <div class="data-list__row"><span class="data-list__key">Payment session</span><span class="data-list__val mono">{{ sessionId() }}</span></div>
+          <div class="data-list__row"><span class="data-list__key">Total paid</span><span class="data-list__val">{{ money(grandTotal()) }}</span></div>
+        </div>
+
+        <div class="row confirm-actions">
+          <a class="btn btn--primary" href="#" data-testid="confirmation-receipt">
+            <app-icon name="download" [size]="16" /> Download receipt
+          </a>
+          <a class="btn btn--ghost" routerLink="/orders" data-testid="confirmation-orders">View my orders</a>
+          <a class="btn btn--subtle" routerLink="/quote/new/upload" data-testid="confirmation-new-quote">Quote another part</a>
+        </div>
+      </div>
+    </div>
+  }
+</div>

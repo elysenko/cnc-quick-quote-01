@@ -1,0 +1,14 @@
+<div #stage class="stage" data-testid="bend-editor-stage">
+  <canvas
+    #canvas
+    class="stage__canvas"
+    data-testid="bend-editor-canvas"
+    role="application"
+    aria-label="Bend line editor. Drag on the part to add a bend line."
+    (pointerdown)="onPointerDown($event)"
+    (pointermove)="onPointerMove($event)"
+    (pointerup)="onPointerUp()"
+    (pointercancel)="onPointerUp()"
+  ></canvas>
+  <p class="hint" data-testid="bend-editor-hint">Drag across the part to add a bend · drag a line to move · drag an endpoint to rotate</p>
+</div>

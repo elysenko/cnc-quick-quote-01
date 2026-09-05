@@ -1,0 +1,70 @@
+<div class="page" data-flow="account" data-testid="account-page">
+  <div class="page-head">
+    <div class="page-head__text">
+      <p class="eyebrow">Account</p>
+      <h1 class="page-title">Your profile</h1>
+      <p class="page-sub">Used on quotes, orders and receipts.</p>
+    </div>
+  </div>
+
+  <div class="split">
+    <form class="card" (submit)="save($event)" data-testid="account-form">
+      <div class="card__head"><h2 class="card__title">Profile details</h2></div>
+      <div class="card__body">
+        <div class="field">
+          <label class="field__label" for="account-name">Full name</label>
+          <input id="account-name" class="input" type="text" data-testid="account-name" [value]="user()?.name" />
+        </div>
+        <div class="field">
+          <label class="field__label" for="account-email">Email</label>
+          <input id="account-email" class="input" type="email" inputmode="email" data-testid="account-email" [value]="user()?.email" />
+        </div>
+        <div class="field">
+          <label class="field__label" for="account-company">Company</label>
+          <input id="account-company" class="input" type="text" data-testid="account-company" [value]="user()?.company" />
+        </div>
+        <div class="field">
+          <label class="field__label" for="account-address">Delivery address</label>
+          <textarea id="account-address" class="textarea" data-testid="account-address">18 Ferrier Road
+Unit 4
+Portland, OR 97218</textarea>
+        </div>
+      </div>
+      <div class="card__foot">
+        <button type="submit" class="btn btn--primary" data-testid="account-save">Save changes</button>
+        @if (saved()) { <span class="badge badge--success" data-testid="account-saved">Saved</span> }
+      </div>
+    </form>
+
+    <aside class="stack">
+      <div class="card">
+        <div class="card__head"><h2 class="card__title">Session</h2></div>
+        <div class="card__body">
+          <div class="data-list">
+            <div class="data-list__row"><span class="data-list__key">Signed in as</span><span class="data-list__val">{{ user()?.email }}</span></div>
+            <div class="data-list__row"><span class="data-list__key">Role</span><span class="data-list__val">{{ user()?.role }}</span></div>
+          </div>
+          @if (isAdmin()) {
+            <a class="btn btn--ghost btn--block adminlink" routerLink="/admin" data-testid="account-admin-link">
+              <app-icon name="sliders" [size]="16" /> Open admin console
+            </a>
+          }
+          <button type="button" class="btn btn--danger btn--block logout" data-testid="account-logout" (click)="logout()">
+            Sign out
+          </button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card__head"><h2 class="card__title">Need a hand?</h2></div>
+        <div class="card__body">
+          <p class="muted text-sm">The {{ branding().companyName }} team can help with drawings, tolerances and lead times.</p>
+          <div class="data-list">
+            <div class="data-list__row"><span class="data-list__key">Email</span><span class="data-list__val">{{ branding().supportEmail }}</span></div>
+            <div class="data-list__row"><span class="data-list__key">Phone</span><span class="data-list__val">{{ branding().supportPhone }}</span></div>
+          </div>
+        </div>
+      </div>
+    </aside>
+  </div>
+</div>

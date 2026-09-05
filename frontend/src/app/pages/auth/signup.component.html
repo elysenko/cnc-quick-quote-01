@@ -1,0 +1,84 @@
+<div class="auth" data-flow="auth-signup" data-testid="signup-page">
+  <aside class="auth__aside">
+    <div class="auth__brand">
+      <span class="auth__mark">{{ branding().logoMark }}</span>
+      <div>
+        <div class="brandline">{{ branding().companyName }}</div>
+        <div class="brandsub">Quick Quote</div>
+      </div>
+    </div>
+
+    <div class="auth__pitch">
+      <h2>Self-serve quoting for laser-cut sheet metal.</h2>
+      <p>Create an account to upload drawings, save quotes, and reorder past jobs in a click.</p>
+    </div>
+
+    <ul class="auth__points">
+      <li class="auth__point"><strong>—</strong><span>Instant, itemised pricing from your own drawing.</span></li>
+      <li class="auth__point"><strong>—</strong><span>See exactly how parts nest on the sheet.</span></li>
+      <li class="auth__point"><strong>—</strong><span>Card checkout with a PDF receipt by email.</span></li>
+    </ul>
+  </aside>
+
+  <div class="auth__main">
+    <div class="auth__card">
+      <p class="eyebrow">Get started</p>
+      <h1 class="page-title">Create your account</h1>
+      <p class="page-sub">Takes under a minute. No card required to quote.</p>
+
+      <form class="card form-card" (submit)="submit($event)" novalidate data-testid="signup-form">
+        <div class="card__body">
+          @if (error()) {
+            <div class="notice notice--danger" role="alert" data-testid="signup-error">
+              <div class="notice__body"><strong>Check your details</strong>{{ error() }}</div>
+            </div>
+          }
+
+          <div class="field">
+            <label class="field__label" for="signup-name">Full name</label>
+            <input id="signup-name" class="input" type="text" autocomplete="name" placeholder="Alex Fielding"
+                   data-testid="signup-name" [value]="name()" (input)="name.set($any($event.target).value)" />
+          </div>
+
+          <div class="field">
+            <label class="field__label" for="signup-email">Work email</label>
+            <input id="signup-email" class="input" type="email" autocomplete="email" inputmode="email"
+                   placeholder="you@company.com" data-testid="signup-email"
+                   [value]="email()" (input)="email.set($any($event.target).value)" />
+          </div>
+
+          <div class="field">
+            <label class="field__label" for="signup-password">Password</label>
+            <input id="signup-password" class="input" type="password" autocomplete="new-password"
+                   placeholder="••••••••" data-testid="signup-password"
+                   [value]="password()" (input)="password.set($any($event.target).value)" />
+            <span class="field__hint">At least 8 characters.</span>
+          </div>
+
+          <div class="field">
+            <label class="field__label" for="signup-confirm">Confirm password</label>
+            <input id="signup-confirm" class="input" type="password" autocomplete="new-password"
+                   placeholder="••••••••" data-testid="signup-confirm"
+                   [value]="confirm()" (input)="confirm.set($any($event.target).value)" />
+          </div>
+
+          <button type="submit" class="btn btn--primary btn--block" data-testid="signup-submit">
+            Create account
+          </button>
+
+          @if (previewShortcut) {
+            <div class="auth__demo demo-row">
+              <button type="button" class="btn btn--subtle btn--sm" data-testid="signup-demo" (click)="demoSignIn()">
+                {{ previewShortcut }}
+              </button>
+            </div>
+          }
+        </div>
+      </form>
+
+      <p class="auth__foot">
+        Already have an account? <a routerLink="/login" data-testid="signup-to-login">Sign in</a>
+      </p>
+    </div>
+  </div>
+</div>

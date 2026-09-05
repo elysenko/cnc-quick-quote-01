@@ -1,0 +1,12 @@
+.empty {
+  display: flex; flex-direction: column; align-items: center; text-align: center;
+  gap: var(--space-2); padding: var(--space-7) var(--space-4);
+}
+.empty__icon {
+  display: grid; place-items: center; width: 56px; height: 56px;
+  border-radius: var(--radius-pill);
+  background: var(--color-surface-sunken); color: var(--color-ink-subtle);
+  margin-bottom: var(--space-2);
+}
+.empty__title { margin: 0; font-size: var(--text-md); }
+.empty__desc { margin: 0; color: var(--color-ink-muted); max-width: 42ch; }

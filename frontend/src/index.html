@@ -2,9 +2,25 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <title>App</title>
-    <base href="/" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>CNC Quick Quote</title>
+    <script>
+      /* Path-agnostic <base href>. The app is served either at the site root
+         (production) or under a per-mockup prefix (/<mockup_id>/) on the static
+         preview host. Deriving the base from the first path segment — unless that
+         segment is one of the app's own top-level routes — makes both work, and
+         keeps deep links loading their JS/CSS correctly. */
+      (function () {
+        var appRoutes = ['login','signup','quotes','quote','checkout','orders','account','admin'];
+        var seg = window.location.pathname.split('/')[1] || '';
+        var isAppRoute = appRoutes.indexOf(seg) !== -1;
+        var isFile = seg.indexOf('.') !== -1;
+        var href = seg && !isAppRoute && !isFile ? '/' + seg + '/' : '/';
+        document.write('<base href="' + href + '">');
+      })();
+    </script>
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#101822" />
+    <meta name="description" content="Instant quoting and ordering for laser-cut sheet metal parts." />
     <link rel="icon" type="image/x-icon" href="favicon.ico" />
   </head>
   <body>

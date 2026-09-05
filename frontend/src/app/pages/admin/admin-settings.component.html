@@ -1,0 +1,100 @@
+<div data-flow="admin-settings" data-testid="admin-settings-page">
+  @if (bannerText()) {
+    <div class="notice notice--warning banner" role="status" data-testid="settings-placeholder-banner">
+      <div class="notice__body">
+        <strong>Some services still need credentials</strong>
+        {{ bannerText() }}
+      </div>
+    </div>
+  }
+
+  <section class="card">
+    <div class="card__head">
+      <div>
+        <h2 class="card__title">Backing services</h2>
+        <p class="card__desc">Infrastructure provisioned for this deployment.</p>
+      </div>
+    </div>
+    <div class="card__body">
+      <ul class="creds" data-testid="settings-backing-services">
+        @for (cred of backingServices(); track cred.id) {
+          <li class="cred" [attr.data-testid]="'settings-row-' + cred.id">
+            <div class="cred__head">
+              <div class="cred__text">
+                <span class="cred__name">{{ cred.service }}</span>
+                <span class="mono cred__key">{{ cred.key }}</span>
+                <span class="muted text-sm">{{ cred.description }}</span>
+              </div>
+              <span [class]="cred.configured ? 'badge badge--success' : 'badge badge--warning'"
+                    [attr.data-testid]="'settings-status-' + cred.id">
+                {{ cred.configured ? 'Configured' : 'Needs credentials' }}
+              </span>
+            </div>
+            @if (editingId() === cred.id) {
+              <div class="cred__form">
+                <input class="input mono" type="password" placeholder="Paste the value" #value
+                       [attr.data-testid]="'settings-input-' + cred.id" />
+                <div class="row">
+                  <button type="button" class="btn btn--primary btn--sm" [attr.data-testid]="'settings-save-' + cred.id" (click)="save(cred.id, value.value)">Save</button>
+                  <button type="button" class="btn btn--subtle btn--sm" [attr.data-testid]="'settings-cancel-' + cred.id" (click)="cancel()">Cancel</button>
+                </div>
+              </div>
+            } @else {
+              <div class="cred__value">
+                <span class="mono" [attr.data-testid]="'settings-value-' + cred.id">{{ cred.maskedValue || 'Not configured' }}</span>
+                <button type="button" class="btn btn--ghost btn--sm" [attr.data-testid]="'settings-edit-' + cred.id" (click)="startEdit(cred.id)">
+                  <app-icon name="lock" [size]="15" /> {{ cred.configured ? 'Replace' : 'Configure' }}
+                </button>
+              </div>
+            }
+          </li>
+        }
+      </ul>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="card__head">
+      <div>
+        <h2 class="card__title">Integrations</h2>
+        <p class="card__desc">Third-party services this app calls. Values are stored encrypted and read back masked.</p>
+      </div>
+    </div>
+    <div class="card__body">
+      <ul class="creds" data-testid="settings-integrations">
+        @for (cred of integrations(); track cred.id) {
+          <li class="cred" [attr.data-testid]="'settings-row-' + cred.id">
+            <div class="cred__head">
+              <div class="cred__text">
+                <span class="cred__name">{{ cred.service }}</span>
+                <span class="mono cred__key">{{ cred.key }}</span>
+                <span class="muted text-sm">{{ cred.description }}</span>
+              </div>
+              <span [class]="cred.configured ? 'badge badge--success' : 'badge badge--warning'"
+                    [attr.data-testid]="'settings-status-' + cred.id">
+                {{ cred.configured ? 'Configured' : 'Needs credentials' }}
+              </span>
+            </div>
+            @if (editingId() === cred.id) {
+              <div class="cred__form">
+                <input class="input mono" type="password" placeholder="Paste the API key" #value
+                       [attr.data-testid]="'settings-input-' + cred.id" />
+                <div class="row">
+                  <button type="button" class="btn btn--primary btn--sm" [attr.data-testid]="'settings-save-' + cred.id" (click)="save(cred.id, value.value)">Save</button>
+                  <button type="button" class="btn btn--subtle btn--sm" [attr.data-testid]="'settings-cancel-' + cred.id" (click)="cancel()">Cancel</button>
+                </div>
+              </div>
+            } @else {
+              <div class="cred__value">
+                <span class="mono" [attr.data-testid]="'settings-value-' + cred.id">{{ cred.maskedValue || 'Not configured' }}</span>
+                <button type="button" class="btn btn--ghost btn--sm" [attr.data-testid]="'settings-edit-' + cred.id" (click)="startEdit(cred.id)">
+                  <app-icon name="lock" [size]="15" /> {{ cred.configured ? 'Replace' : 'Configure' }}
+                </button>
+              </div>
+            }
+          </li>
+        }
+      </ul>
+    </div>
+  </section>
+</div>

@@ -1,0 +1,76 @@
+<div class="shell" [class.shell--drawer-open]="drawerOpen()">
+  <aside class="sidebar" data-testid="app-sidebar">
+    <a class="brand" routerLink="/quotes" data-testid="brand-home" (click)="closeDrawer()">
+      <span class="brand__mark" aria-hidden="true">{{ branding().logoMark }}</span>
+      <span class="brand__text">
+        <span class="brand__name">{{ branding().companyName }}</span>
+        <span class="brand__tag">Quick Quote</span>
+      </span>
+    </a>
+
+    <nav class="sidebar__nav" aria-label="Main">
+      @for (item of navItems(); track item.path) {
+        <a
+          class="nav-link"
+          [routerLink]="item.path"
+          routerLinkActive="is-active"
+          [routerLinkActiveOptions]="{ exact: item.exact }"
+          [attr.data-testid]="item.testid"
+          (click)="closeDrawer()"
+        >
+          <app-icon class="nav-link__icon" [name]="item.icon" [size]="19" />
+          <span>{{ item.label }}</span>
+        </a>
+      }
+    </nav>
+
+    <div class="sidebar__foot">
+      <div class="who">
+        <span class="who__avatar" aria-hidden="true">{{ initials() }}</span>
+        <span class="who__text">
+          <span class="who__name">{{ user()?.name }}</span>
+          <span class="who__org">{{ user()?.company }}</span>
+        </span>
+      </div>
+      <button type="button" class="btn btn--sm btn--ghost btn--block" data-testid="sidebar-logout" (click)="logout()">
+        Sign out
+      </button>
+    </div>
+  </aside>
+
+  <button
+    type="button"
+    class="scrim"
+    aria-label="Close navigation"
+    data-testid="nav-scrim"
+    (click)="closeDrawer()"
+  ></button>
+
+  <div class="main">
+    <header class="topbar">
+      <button type="button" class="topbar__menu" data-testid="nav-toggle" aria-label="Open navigation" (click)="toggleDrawer()">
+        <span class="topbar__bars" aria-hidden="true"></span>
+      </button>
+      <span class="topbar__title">{{ branding().companyName }}</span>
+      <a class="topbar__cta" routerLink="/quote/new/upload" data-testid="topbar-new-quote">New quote</a>
+    </header>
+
+    <main class="content" data-testid="app-content">
+      <router-outlet />
+    </main>
+
+    <nav class="tabbar" aria-label="Primary" data-testid="mobile-tabbar">
+      @for (item of navItems(); track item.path) {
+        <a
+          class="tabbar__item"
+          [routerLink]="item.path"
+          routerLinkActive="is-active"
+          [attr.data-testid]="item.testid + '-tab'"
+        >
+          <app-icon class="tabbar__icon" [name]="item.icon" [size]="21" />
+          <span class="tabbar__label">{{ item.shortLabel }}</span>
+        </a>
+      }
+    </nav>
+  </div>
+</div>

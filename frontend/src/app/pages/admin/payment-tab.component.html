@@ -1,0 +1,61 @@
+<div data-flow="admin-business-payment" data-testid="payment-tab">
+  <div class="notice notice--warning banner" data-testid="payment-placeholder-banner">
+    <div class="notice__body">
+      <strong>Card payments are not live yet</strong>
+      Until the Stripe secret key and webhook signing secret are entered, customers can quote but
+      not buy. Keys are stored encrypted and only ever shown masked.
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card__head">
+      <div>
+        <h2 class="card__title">Payment credentials</h2>
+        <p class="card__desc">Written encrypted, read back masked — the original value is never displayed again.</p>
+      </div>
+    </div>
+    <div class="card__body">
+      <ul class="secrets" data-testid="payment-secrets">
+        @for (secret of secrets(); track secret.id) {
+          <li class="secret" [attr.data-testid]="'secret-' + secret.id">
+            <div class="secret__head">
+              <div class="secret__text">
+                <span class="secret__label">{{ secret.label }}</span>
+                <span class="muted text-sm">{{ secret.hint }}</span>
+              </div>
+              <span [class]="secret.masked ? 'badge badge--success' : 'badge badge--warning'"
+                    [attr.data-testid]="'secret-status-' + secret.id">
+                {{ secret.masked ? 'Configured' : 'Not set' }}
+              </span>
+            </div>
+
+            @if (replacing() === secret.id) {
+              <div class="secret__form">
+                <input class="input mono" type="password" placeholder="Paste the new key"
+                       [attr.data-testid]="'secret-input-' + secret.id" #keyInput />
+                <div class="row">
+                  <button type="button" class="btn btn--primary btn--sm"
+                          [attr.data-testid]="'secret-save-' + secret.id" (click)="saveSecret(secret.id, keyInput.value)">
+                    Save key
+                  </button>
+                  <button type="button" class="btn btn--subtle btn--sm"
+                          [attr.data-testid]="'secret-cancel-' + secret.id" (click)="cancel()">Cancel</button>
+                </div>
+              </div>
+            } @else {
+              <div class="secret__value">
+                <span class="mono" [attr.data-testid]="'secret-value-' + secret.id">
+                  {{ secret.masked || 'Not configured' }}
+                </span>
+                <button type="button" class="btn btn--ghost btn--sm"
+                        [attr.data-testid]="'secret-replace-' + secret.id" (click)="startReplace(secret.id)">
+                  <app-icon name="lock" [size]="15" /> {{ secret.masked ? 'Replace' : 'Add key' }}
+                </button>
+              </div>
+            }
+          </li>
+        }
+      </ul>
+    </div>
+  </div>
+</div>

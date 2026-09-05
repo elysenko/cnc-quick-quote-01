@@ -1,0 +1,39 @@
+.overlay { position: fixed; inset: 0; z-index: 60; display: grid; place-items: center; padding: var(--space-4); }
+.overlay__scrim { position: absolute; inset: 0; border: 0; padding: 0; background: var(--color-surface-inverse); opacity: 0.48; cursor: pointer; }
+.sheet {
+  position: relative; z-index: 1;
+  width: min(560px, 100%); max-height: min(86svh, 720px);
+  display: flex; flex-direction: column;
+  background: var(--color-surface); border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg); box-shadow: var(--shadow-lg);
+}
+.sheet__head { display: flex; align-items: flex-start; gap: var(--space-3); padding: var(--space-4) var(--space-5); border-bottom: 1px solid var(--color-border); }
+.sheet__grabber { display: none; }
+.sheet__titles { flex: 1 1 auto; min-width: 0; }
+.sheet__title { margin: 0; font-size: var(--text-md); }
+.sheet__desc { margin: var(--space-1) 0 0; color: var(--color-ink-muted); font-size: var(--text-sm); }
+.sheet__close {
+  width: var(--touch-target); height: var(--touch-target); flex: 0 0 auto;
+  border: 0; background: transparent; border-radius: var(--radius-md);
+  font-size: var(--text-xl); line-height: 1; color: var(--color-ink-muted); cursor: pointer;
+}
+.sheet__close:hover { background: var(--color-surface-sunken); color: var(--color-ink); }
+.sheet__body { padding: var(--space-5); overflow-y: auto; overscroll-behavior-y: contain; }
+
+@media (max-width: 768px) {
+  .overlay { padding: 0; align-items: end; }
+  .sheet {
+    width: 100%; max-height: 92svh;
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    border-bottom: 0;
+    padding-bottom: env(safe-area-inset-bottom);
+    animation: sheet-up var(--dur-med) var(--ease);
+  }
+  .sheet__head { flex-wrap: wrap; padding-top: var(--space-2); }
+  .sheet__grabber {
+    display: block; width: 44px; height: 4px; border-radius: var(--radius-pill);
+    background: var(--color-border-strong); margin: 0 auto var(--space-2); flex: 0 0 100%;
+  }
+}
+
+@keyframes sheet-up { from { transform: translateY(14%); } to { transform: translateY(0); } }

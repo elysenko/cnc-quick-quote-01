@@ -1,0 +1,3 @@
+:host { display: block; }
+.adminlink { margin-top: var(--space-4); }
+.logout { margin-top: var(--space-2); }

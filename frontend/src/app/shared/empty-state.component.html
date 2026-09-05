@@ -1,0 +1,6 @@
+<div class="empty" [attr.data-testid]="testid">
+  <span class="empty__icon"><app-icon [name]="icon" [size]="26" /></span>
+  <h3 class="empty__title">{{ title }}</h3>
+  @if (description) { <p class="empty__desc">{{ description }}</p> }
+  <ng-content />
+</div>

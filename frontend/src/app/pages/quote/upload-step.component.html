@@ -1,0 +1,113 @@
+<div class="split" data-flow="quote-upload" data-testid="upload-step">
+  <section class="card">
+    <div class="card__head">
+      <div>
+        <h2 class="card__title">Step 1 — Upload your drawing</h2>
+        <p class="card__desc">
+          Accepted: {{ uploads().allowedExtensions }} · up to {{ uploads().maxUploadMb }} MB
+        </p>
+      </div>
+    </div>
+
+    <div class="card__body">
+      @switch (state()) {
+        @case ('idle') {
+          <div
+            class="dropzone"
+            [class.dropzone--over]="dragOver()"
+            data-testid="upload-dropzone"
+            (dragover)="onDragOver($event)"
+            (dragleave)="onDragLeave()"
+            (drop)="onDrop($event)"
+          >
+            <span class="dropzone__icon"><app-icon name="upload" [size]="28" /></span>
+            <h3 class="dropzone__title">Drop your DXF here</h3>
+            <p class="dropzone__desc">We read every LINE, ARC, CIRCLE and polyline to measure the true cut length.</p>
+            <button type="button" class="btn btn--primary" data-testid="upload-choose-file" (click)="simulateUpload()">
+              Choose a file
+            </button>
+            <button type="button" class="btn btn--subtle btn--sm" data-testid="upload-show-error" (click)="showParseError()">
+              Preview the rejected-file state
+            </button>
+          </div>
+        }
+
+        @case ('uploading') {
+          <div class="uploading" data-testid="upload-progress">
+            <p class="muted">Uploading and parsing <strong>bracket-rev-c.dxf</strong>…</p>
+            <div class="bar" role="progressbar" [attr.aria-valuenow]="progress()" aria-valuemin="0" aria-valuemax="100">
+              <span class="bar__fill" [style.width.%]="progress()"></span>
+            </div>
+            <p class="mono muted text-sm">{{ progress() }}%</p>
+          </div>
+        }
+
+        @case ('error') {
+          <div class="notice notice--danger" role="alert" data-testid="upload-parse-error">
+            <div class="notice__body">
+              <strong>We could not read that drawing</strong>
+              The file contained no supported geometry (422). Nothing was stored. Export a flat DXF
+              from your CAD package with LINE, ARC, CIRCLE or polyline entities and try again.
+            </div>
+          </div>
+          <button type="button" class="btn btn--ghost" data-testid="upload-retry" (click)="reset()">
+            Try another file
+          </button>
+        }
+
+        @default {
+          <div class="parsed" data-testid="upload-parsed">
+            <div class="filecard">
+              <span class="filecard__icon"><app-icon name="doc" [size]="20" /></span>
+              <div class="filecard__text">
+                <strong data-testid="upload-filename">{{ drawing()?.filename }}</strong>
+                <span class="muted text-sm">{{ bytes(drawing()?.sizeBytes || 0) }} · parsed successfully</span>
+              </div>
+              <span class="badge badge--success">Parsed</span>
+            </div>
+
+            @if ((drawing()?.skippedEntities || 0) > 0) {
+              <div class="notice notice--warning" data-testid="upload-skipped-warning">
+                <div class="notice__body">
+                  <strong>{{ drawing()?.skippedEntities }} entities were skipped</strong>
+                  Unsupported entity types (splines, text) are not priced. Check the quote covers the
+                  whole part before ordering.
+                </div>
+              </div>
+            }
+
+            <div class="grid grid--auto">
+              <div class="stat"><span class="stat__label">Cut length</span><span class="stat__value" data-testid="upload-cut-length">{{ cutLengthLabel() }}</span></div>
+              <div class="stat"><span class="stat__label">Bounding box</span><span class="stat__value">{{ drawing()?.bboxWidthMm }} × {{ drawing()?.bboxHeightMm }}</span></div>
+              <div class="stat"><span class="stat__label">Entities read</span><span class="stat__value">{{ drawing()?.entityCount }}</span></div>
+            </div>
+
+            <div class="row">
+              <button type="button" class="btn btn--ghost" data-testid="upload-replace" (click)="reset()">Replace drawing</button>
+              <a class="btn btn--primary" routerLink="/quote/new/bends" data-testid="upload-continue">
+                Continue to bends <app-icon name="chevron" [size]="16" />
+              </a>
+            </div>
+          </div>
+        }
+      }
+    </div>
+  </section>
+
+  <aside class="card">
+    <div class="card__head"><h2 class="card__title">What we check</h2></div>
+    <div class="card__body">
+      <ul class="checks">
+        <li class="check"><app-icon name="check" [size]="16" /><span>File type and size against your workshop's upload limits.</span></li>
+        <li class="check"><app-icon name="check" [size]="16" /><span>True arc length for curved segments, so curves are not under-priced.</span></li>
+        <li class="check"><app-icon name="check" [size]="16" /><span>Overall bounding box, used to nest parts on the sheet.</span></li>
+        <li class="check"><app-icon name="alert" [size]="16" /><span>Anything we cannot read is reported, never silently ignored.</span></li>
+      </ul>
+      <hr class="divider" />
+      <p class="muted text-sm">
+        Malformed or empty files are rejected outright. A valid but messy drawing (open shapes,
+        stray construction lines) will still quote — check the preview on the next step.
+      </p>
+    </div>
+  </aside>
+</div>

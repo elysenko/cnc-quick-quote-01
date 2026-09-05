@@ -1,0 +1,104 @@
+<div class="split" data-flow="quote-configure" data-testid="configure-step">
+  <section class="stack">
+    <div class="card">
+      <div class="card__head">
+        <div>
+          <h2 class="card__title">Step 3 — Material and quantity</h2>
+          <p class="card__desc">Only materials your workshop currently stocks are listed.</p>
+        </div>
+      </div>
+      <div class="card__body">
+        <p class="eyebrow">Material</p>
+        <ul class="materials" data-testid="material-select">
+          @for (mat of materials(); track mat.id) {
+            <li>
+              <button
+                type="button"
+                class="matcard"
+                [class.is-active]="mat.id === materialId()"
+                [attr.data-testid]="'material-option-' + mat.id"
+                [attr.aria-pressed]="mat.id === materialId()"
+                (click)="selectMaterial(mat.id)"
+              >
+                <span class="matcard__top">
+                  <span class="matcard__name">{{ mat.name }}</span>
+                  @if (mat.id === materialId()) { <app-icon name="check" [size]="16" /> }
+                </span>
+                <span class="matcard__meta mono">{{ mat.thicknessMm }} mm · sheet {{ mat.sheetWidthMm }}×{{ mat.sheetHeightMm }}</span>
+                <span class="matcard__price mono">{{ money(mat.perSheetCostCents) }} / sheet</span>
+              </button>
+            </li>
+          }
+        </ul>
+
+        <hr class="divider" />
+
+        <div class="field">
+          <label class="field__label" for="quantity">Quantity</label>
+          <div class="qty">
+            <button type="button" class="qty__btn" data-testid="quantity-decrement" aria-label="Decrease quantity" (click)="bump(-1)">−</button>
+            <input
+              id="quantity"
+              class="input qty__input mono"
+              type="number"
+              inputmode="numeric"
+              [attr.min]="uploads().quantityMin"
+              [attr.max]="uploads().quantityMax"
+              data-testid="quantity-input"
+              [value]="quantity()"
+              (input)="setQuantity($any($event.target).value)"
+            />
+            <button type="button" class="qty__btn" data-testid="quantity-increment" aria-label="Increase quantity" (click)="bump(1)">+</button>
+          </div>
+          @if (quantityError()) {
+            <span class="field__error" role="alert" data-testid="quantity-error">{{ quantityError() }}</span>
+          } @else {
+            <span class="field__hint" data-testid="quantity-hint">
+              Between {{ uploads().quantityMin }} and {{ uploads().quantityMax }} parts per order.
+            </span>
+          }
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card__head"><h2 class="card__title">How your parts nest</h2></div>
+      <div class="card__body">
+        <div class="grid grid--auto">
+          <div class="stat"><span class="stat__label">Sheets needed</span><span class="stat__value" data-testid="nest-sheets">{{ nesting().sheetCount }}</span></div>
+          <div class="stat"><span class="stat__label">Parts per sheet</span><span class="stat__value" data-testid="nest-per-sheet">{{ perSheet() }}</span></div>
+          <div class="stat"><span class="stat__label">Sheet utilisation</span><span class="stat__value" data-testid="nest-utilisation">{{ percent(nesting().utilisation) }}</span></div>
+          <div class="stat"><span class="stat__label">Layout</span><span class="stat__value">{{ nesting().cols }}×{{ nesting().rows }}</span></div>
+        </div>
+        <p class="muted text-sm nestnote">
+          Parts are packed in straight rows and columns.
+          {{ nesting().rotated ? 'Rotating the part 90° fits more per sheet, so we did.' : 'The upright orientation packs densest here.' }}
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <aside class="card summary">
+    <div class="card__head">
+      <div>
+        <h2 class="card__title">Live price</h2>
+        <p class="card__desc">{{ quantity() }} × {{ material().name }}</p>
+      </div>
+    </div>
+    <div class="card__body">
+      <app-cost-breakdown
+        [lines]="price().lines"
+        [subtotalCents]="price().subtotalCents"
+        [totalCents]="price().totalCents"
+        [minimumApplied]="price().minimumApplied"
+        [minimumCents]="pricing().minimumOrderCents"
+      />
+    </div>
+    <div class="card__foot">
+      <a class="btn btn--ghost" routerLink="/quote/new/bends" data-testid="configure-back">Back</a>
+      <a class="btn btn--primary spacer-btn" routerLink="/quote/new/result" data-testid="configure-continue">
+        Generate quote <app-icon name="chevron" [size]="16" />
+      </a>
+    </div>
+  </aside>
+</div>

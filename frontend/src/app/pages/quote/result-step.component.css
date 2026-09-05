@@ -1,0 +1,6 @@
+:host { display: block; }
+.bed-body { padding: var(--space-3); }
+.summary { position: sticky; top: var(--space-4); }
+.foot { flex-direction: column; align-items: stretch; }
+.matname { font-size: var(--text-base); font-family: var(--font-sans); }
+@media (max-width: 900px) { .summary { position: static; } }

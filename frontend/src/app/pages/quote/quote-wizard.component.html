@@ -1,0 +1,31 @@
+<div class="page" data-flow="quote-wizard" data-testid="quote-wizard">
+  <div class="page-head">
+    <div class="page-head__text">
+      <p class="eyebrow">New quote</p>
+      <h1 class="page-title">Quote a part</h1>
+      <p class="page-sub">
+        {{ drawing()?.filename || 'No drawing yet' }} · running total
+        <strong class="mono">{{ money(price().totalCents) }}</strong>
+      </p>
+    </div>
+  </div>
+
+  <ol class="stepper" data-testid="quote-stepper">
+    @for (step of steps; track step.path) {
+      <li class="stepper__item">
+        <a
+          class="stepper__link"
+          [routerLink]="['/quote/new', step.path]"
+          routerLinkActive="is-active"
+          [attr.data-testid]="step.testid"
+        >
+          <span class="stepper__num">{{ step.index }}</span>
+          <span class="stepper__label">{{ step.label }}</span>
+          <span class="stepper__short">{{ step.short }}</span>
+        </a>
+      </li>
+    }
+  </ol>
+
+  <router-outlet />
+</div>

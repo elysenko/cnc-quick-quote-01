@@ -1,0 +1,86 @@
+<div class="split" data-flow="quote-bends" data-testid="bend-step">
+  <section class="card">
+    <div class="card__head">
+      <div>
+        <h2 class="card__title">Step 2 — Mark your bend lines</h2>
+        <p class="card__desc">Bends are metadata — your original drawing is never modified.</p>
+      </div>
+      <span class="badge badge--accent" data-testid="bend-count">{{ bends().length }} bends</span>
+    </div>
+
+    <div class="card__body">
+      <app-bend-editor-canvas
+        [polylines]="polylines()"
+        [bends]="bends()"
+        [partWidthMm]="partWidth()"
+        [partHeightMm]="partHeight()"
+        [selectedId]="selectedId()"
+        (selectBend)="select($event)"
+        (createBend)="create($event)"
+        (moveBend)="move($event)"
+      />
+
+      <div class="row row--between actions">
+        <a class="btn btn--ghost" routerLink="/quote/new/upload" data-testid="bend-back">Back</a>
+        <a class="btn btn--primary" routerLink="/quote/new/configure" data-testid="bend-continue">
+          Continue to material <app-icon name="chevron" [size]="16" />
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <aside class="stack">
+    <div class="card">
+      <div class="card__head"><h2 class="card__title">Bend lines</h2></div>
+      <div class="card__body bendlist-body">
+        @if (bends().length === 0) {
+          <app-empty-state
+            icon="bend"
+            testid="bends-empty"
+            title="No bends yet"
+            description="Drag across the part on the canvas to add your first bend line."
+          />
+        } @else {
+          <ul class="bendlist" data-testid="bend-list">
+            @for (bend of bends(); track bend.id) {
+              <li class="bendrow" [class.is-active]="bend.id === selectedId()" [attr.data-testid]="'bend-row-' + bend.id">
+                <button type="button" class="bendrow__main" [attr.data-testid]="'bend-select-' + bend.id" (click)="select(bend.id)">
+                  <span class="bendrow__name">{{ bend.id }}</span>
+                  <span class="bendrow__meta mono">{{ bend.angleDeg }}° · {{ bend.direction }} · {{ bendLength(bend.id) }} mm</span>
+                </button>
+                <button type="button" class="bendrow__del" [attr.data-testid]="'bend-delete-' + bend.id"
+                        aria-label="Delete bend" (click)="remove(bend.id)">
+                  <app-icon name="trash" [size]="16" />
+                </button>
+              </li>
+            }
+          </ul>
+        }
+      </div>
+    </div>
+
+    @if (selected(); as bend) {
+      <div class="card" data-testid="bend-inspector">
+        <div class="card__head"><h2 class="card__title">Edit {{ bend.id }}</h2></div>
+        <div class="card__body">
+          <div class="field">
+            <label class="field__label" for="bend-angle">Bend angle (0–180°)</label>
+            <input id="bend-angle" class="input" type="number" min="0" max="180" step="1"
+                   data-testid="bend-angle" [value]="bend.angleDeg"
+                   (input)="setAngle($any($event.target).value)" />
+          </div>
+          <div class="field">
+            <span class="field__label">Direction</span>
+            <div class="seg" role="group" aria-label="Bend direction">
+              <button type="button" class="seg__btn" [class.is-active]="bend.direction === 'up'"
+                      data-testid="bend-direction-up" (click)="setDirection('up')">Up</button>
+              <button type="button" class="seg__btn" [class.is-active]="bend.direction === 'down'"
+                      data-testid="bend-direction-down" (click)="setDirection('down')">Down</button>
+            </div>
+          </div>
+          <p class="muted text-sm">Each bend adds a per-bend charge to every part in the run.</p>
+        </div>
+      </div>
+    }
+  </aside>
+</div>

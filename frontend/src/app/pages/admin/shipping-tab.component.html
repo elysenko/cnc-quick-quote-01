@@ -1,0 +1,61 @@
+<div data-flow="admin-business-shipping" data-testid="shipping-tab">
+  <div class="card">
+    <div class="card__head">
+      <div>
+        <h2 class="card__title">Shipping methods</h2>
+        <p class="card__desc">With no active methods, checkout is blocked rather than sending an unpriced order.</p>
+      </div>
+      <button type="button" class="btn btn--primary" data-testid="shipping-new" (click)="open()">
+        <app-icon name="plus" [size]="16" /> Add method
+      </button>
+    </div>
+
+    <div class="table-wrap">
+      <table class="table" data-testid="shipping-methods-table">
+        <thead>
+          <tr>
+            <th scope="col">Method</th>
+            <th scope="col">Rate type</th>
+            <th scope="col" class="text-right">Rate</th>
+            <th scope="col" class="text-right">ETA</th>
+            <th scope="col">Status</th>
+            <th scope="col"><span class="visually-hidden">Actions</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (method of methods(); track method.id) {
+            <tr [attr.data-testid]="'shipping-row-' + method.id">
+              <td><strong>{{ method.name }}</strong></td>
+              <td class="muted">{{ method.kind === 'per_sheet' ? 'Per sheet' : 'Flat' }}</td>
+              <td class="mono text-right">{{ money(method.costCents) }}</td>
+              <td class="mono text-right">{{ method.etaDays }} days</td>
+              <td><span [class]="method.active ? 'badge badge--success' : 'badge'">{{ method.active ? 'Active' : 'Hidden' }}</span></td>
+              <td class="text-right">
+                <button type="button" class="btn btn--subtle btn--sm" [attr.data-testid]="'shipping-toggle-' + method.id" (click)="toggle(method.id)">
+                  {{ method.active ? 'Hide' : 'Activate' }}
+                </button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <app-modal [open]="showNew()" title="Add a shipping method" description="Flat rates are charged once; per-sheet rates multiply by sheet count."
+             testid="shipping-new-modal" (closed)="close()">
+    <form (submit)="create($event)">
+      <div class="field">
+        <label class="field__label" for="ship-name">Method name</label>
+        <input id="ship-name" class="input" type="text" placeholder="Regional courier" data-testid="shipping-new-name"
+               [value]="newName()" (input)="newName.set($any($event.target).value)" />
+      </div>
+      <div class="field">
+        <label class="field__label" for="ship-cost">Rate</label>
+        <input id="ship-cost" class="input mono" type="number" step="0.01" min="0" data-testid="shipping-new-cost"
+               [value]="newCost()" (input)="newCost.set($any($event.target).value)" />
+      </div>
+      <button type="submit" class="btn btn--primary btn--block" data-testid="shipping-new-save">Add method</button>
+    </form>
+  </app-modal>
+</div>

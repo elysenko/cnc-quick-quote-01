@@ -1,0 +1,62 @@
+<div class="split" data-flow="admin-uploads" data-testid="admin-uploads-page">
+  <form class="card" (submit)="save($event)" data-testid="uploads-form">
+    <div class="card__head">
+      <div>
+        <h2 class="card__title">Upload and quantity limits</h2>
+        <p class="card__desc">Enforced before a file is stored, and again when a quote is generated.</p>
+      </div>
+    </div>
+    <div class="card__body">
+      <div class="field">
+        <label class="field__label" for="upload-ext">Allowed file extensions</label>
+        <input id="upload-ext" class="input" type="text" data-testid="uploads-extensions"
+               [value]="uploads().allowedExtensions" (input)="setText('allowedExtensions', $any($event.target).value)" />
+        <span class="field__hint">Comma separated, including the dot.</span>
+      </div>
+      <div class="grid grid--2">
+        <div class="field">
+          <label class="field__label" for="upload-size">Maximum file size (MB)</label>
+          <input id="upload-size" class="input mono" type="number" min="1" data-testid="uploads-max-size"
+                 [value]="uploads().maxUploadMb" (input)="setNumber('maxUploadMb', $any($event.target).value)" />
+        </div>
+        <div class="field">
+          <label class="field__label" for="qty-min">Minimum quantity</label>
+          <input id="qty-min" class="input mono" type="number" min="1" data-testid="uploads-quantity-min"
+                 [value]="uploads().quantityMin" (input)="setNumber('quantityMin', $any($event.target).value)" />
+        </div>
+        <div class="field">
+          <label class="field__label" for="qty-max">Maximum quantity</label>
+          <input id="qty-max" class="input mono" type="number" min="1" data-testid="uploads-quantity-max"
+                 [value]="uploads().quantityMax" (input)="setNumber('quantityMax', $any($event.target).value)" />
+        </div>
+      </div>
+    </div>
+    <div class="card__foot">
+      <button type="submit" class="btn btn--primary" data-testid="uploads-save">
+        <app-icon name="check" [size]="16" /> Save limits
+      </button>
+    </div>
+  </form>
+
+  <aside class="card">
+    <div class="card__head"><h2 class="card__title">What customers see</h2></div>
+    <div class="card__body">
+      <div class="notice notice--info">
+        <div class="notice__body">
+          <strong>Upload panel</strong>
+          Accepted: {{ uploads().allowedExtensions }} · up to {{ uploads().maxUploadMb }} MB
+        </div>
+      </div>
+      <div class="notice notice--warning spaced">
+        <div class="notice__body">
+          <strong>Quantity rejected</strong>
+          Quantity must be between {{ uploads().quantityMin }} and {{ uploads().quantityMax }}.
+        </div>
+      </div>
+      <p class="muted text-sm spaced">
+        Files that fail these checks are rejected before anything is stored, so nothing partial
+        ends up in the drawing library.
+      </p>
+    </div>
+  </aside>
+</div>

@@ -1,0 +1,6 @@
+:host { display: block; }
+.formula {
+  margin: 0; padding: var(--space-3);
+  background: var(--color-surface-sunken); border-radius: var(--radius-md);
+  font-size: var(--text-sm); line-height: 1.7; color: var(--color-ink-muted);
+}

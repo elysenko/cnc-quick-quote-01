@@ -1,0 +1,72 @@
+<div class="split" data-flow="admin-pricing" data-testid="admin-pricing-page">
+  <form class="card" (submit)="save($event)" data-testid="pricing-form">
+    <div class="card__head">
+      <div>
+        <h2 class="card__title">Pricing rules</h2>
+        <p class="card__desc">Every quote is built from these values and keeps a snapshot of them.</p>
+      </div>
+    </div>
+    <div class="card__body">
+      <div class="grid grid--2">
+        <div class="field">
+          <label class="field__label" for="price-cut">Cut cost per linear foot</label>
+          <input id="price-cut" class="input mono" type="number" step="0.01" min="0" data-testid="pricing-cost-per-ft"
+                 [value]="(pricing().costPerFtCents / 100).toFixed(2)" (input)="set('costPerFtCents', $any($event.target).value)" />
+          <span class="field__hint">Multiplied by the total cut length across the whole run.</span>
+        </div>
+        <div class="field">
+          <label class="field__label" for="price-bend">Cost per bend</label>
+          <input id="price-bend" class="input mono" type="number" step="0.01" min="0" data-testid="pricing-cost-per-bend"
+                 [value]="(pricing().costPerBendCents / 100).toFixed(2)" (input)="set('costPerBendCents', $any($event.target).value)" />
+          <span class="field__hint">Charged per bend, per part.</span>
+        </div>
+        <div class="field">
+          <label class="field__label" for="price-setup">Setup fee</label>
+          <input id="price-setup" class="input mono" type="number" step="0.01" min="0" data-testid="pricing-setup-fee"
+                 [value]="(pricing().setupFeeCents / 100).toFixed(2)" (input)="set('setupFeeCents', $any($event.target).value)" />
+          <span class="field__hint">Charged once per order.</span>
+        </div>
+        <div class="field">
+          <label class="field__label" for="price-handling">Handling</label>
+          <input id="price-handling" class="input mono" type="number" step="0.01" min="0" data-testid="pricing-handling"
+                 [value]="(pricing().handlingCents / 100).toFixed(2)" (input)="set('handlingCents', $any($event.target).value)" />
+          <span class="field__hint">Deburr, inspect and pack. Once per order.</span>
+        </div>
+        <div class="field">
+          <label class="field__label" for="price-minimum">Minimum order</label>
+          <input id="price-minimum" class="input mono" type="number" step="0.01" min="0" data-testid="pricing-minimum"
+                 [value]="(pricing().minimumOrderCents / 100).toFixed(2)" (input)="set('minimumOrderCents', $any($event.target).value)" />
+          <span class="field__hint">Any quote below this is raised to it.</span>
+        </div>
+      </div>
+    </div>
+    <div class="card__foot">
+      <button type="submit" class="btn btn--primary" data-testid="pricing-save">
+        <app-icon name="check" [size]="16" /> Save pricing
+      </button>
+      <span class="muted text-sm">Existing quotes keep the price they were generated with.</span>
+    </div>
+  </form>
+
+  <aside class="card">
+    <div class="card__head"><h2 class="card__title">Formula</h2></div>
+    <div class="card__body">
+      <p class="formula mono">
+        total = max(minimum,<br />
+        &nbsp;&nbsp;setup<br />
+        &nbsp;&nbsp;+ cut_ft × cost_per_ft<br />
+        &nbsp;&nbsp;+ sheets × sheet_cost × multiplier<br />
+        &nbsp;&nbsp;+ handling<br />
+        &nbsp;&nbsp;+ bends × cost_per_bend)
+      </p>
+      <hr class="divider" />
+      <div class="data-list">
+        <div class="data-list__row"><span class="data-list__key">Cut / ft</span><span class="data-list__val">{{ money(pricing().costPerFtCents) }}</span></div>
+        <div class="data-list__row"><span class="data-list__key">Per bend</span><span class="data-list__val">{{ money(pricing().costPerBendCents) }}</span></div>
+        <div class="data-list__row"><span class="data-list__key">Setup</span><span class="data-list__val">{{ money(pricing().setupFeeCents) }}</span></div>
+        <div class="data-list__row"><span class="data-list__key">Handling</span><span class="data-list__val">{{ money(pricing().handlingCents) }}</span></div>
+        <div class="data-list__row"><span class="data-list__key">Minimum</span><span class="data-list__val">{{ money(pricing().minimumOrderCents) }}</span></div>
+      </div>
+    </div>
+  </aside>
+</div>

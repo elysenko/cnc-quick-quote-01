@@ -1,0 +1,85 @@
+<div class="split" data-flow="quote-result" data-testid="result-step">
+  <section class="stack">
+    <div class="card">
+      <div class="card__head">
+        <div>
+          <h2 class="card__title">Work bed</h2>
+          <p class="card__desc">
+            Sheet {{ sheetIndex() + 1 }} of {{ nesting().sheetCount }} ·
+            {{ percent(nesting().utilisation) }} utilisation ·
+            {{ machine().animationSpeedMmPerSec }} mm/s
+          </p>
+        </div>
+        <div class="row">
+          @if (nesting().sheetCount > 1) {
+            <button type="button" class="btn btn--ghost btn--sm" data-testid="sheet-prev" (click)="changeSheet(-1)">Prev sheet</button>
+            <button type="button" class="btn btn--ghost btn--sm" data-testid="sheet-next" (click)="changeSheet(1)">Next sheet</button>
+          }
+          <button
+            type="button"
+            class="btn btn--accent"
+            data-testid="print-bed-toggle"
+            [attr.aria-pressed]="running()"
+            (click)="toggleAnimation()"
+          >
+            <app-icon [name]="running() ? 'stop' : 'play'" [size]="16" />
+            {{ running() ? 'Stop bed' : 'Print bed' }}
+          </button>
+        </div>
+      </div>
+      <div class="card__body bed-body">
+        <app-work-bed-canvas
+          [nesting]="nesting()"
+          [polylines]="polylines()"
+          [bends]="bends()"
+          [partWidthMm]="partWidth()"
+          [partHeightMm]="partHeight()"
+          [bedWidthMm]="machine().bedWidthMm"
+          [bedHeightMm]="machine().bedHeightMm"
+          [speedMmPerSec]="machine().animationSpeedMmPerSec"
+          [running]="running()"
+          [sheetIndex]="sheetIndex()"
+        />
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card__head"><h2 class="card__title">Job summary</h2></div>
+      <div class="card__body">
+        <div class="grid grid--auto">
+          <div class="stat"><span class="stat__label">Quote</span><span class="stat__value" data-testid="result-reference">{{ quoteRef }}</span></div>
+          <div class="stat"><span class="stat__label">Parts</span><span class="stat__value" data-testid="result-quantity">{{ quantity() }}</span></div>
+          <div class="stat"><span class="stat__label">Total cut</span><span class="stat__value">{{ feet(price().totalCutLengthMm) }}</span></div>
+          <div class="stat"><span class="stat__label">Total bends</span><span class="stat__value">{{ price().totalBends }}</span></div>
+          <div class="stat"><span class="stat__label">Sheets</span><span class="stat__value">{{ nesting().sheetCount }}</span></div>
+          <div class="stat"><span class="stat__label">Material</span><span class="stat__value matname">{{ material().name }}</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <aside class="card summary">
+    <div class="card__head">
+      <div>
+        <h2 class="card__title">Your quote</h2>
+        <p class="card__desc">Priced at today's rates and held for this quote.</p>
+      </div>
+    </div>
+    <div class="card__body">
+      <app-cost-breakdown
+        [lines]="price().lines"
+        [subtotalCents]="price().subtotalCents"
+        [totalCents]="price().totalCents"
+        [minimumApplied]="price().minimumApplied"
+        [minimumCents]="pricing().minimumOrderCents"
+      />
+    </div>
+    <div class="card__foot foot">
+      <a class="btn btn--primary btn--block" [routerLink]="['/checkout', 'q_0148', 'review']" data-testid="result-checkout">
+        Continue to checkout <app-icon name="chevron" [size]="16" />
+      </a>
+      <a class="btn btn--ghost btn--block" routerLink="/quote/new/configure" data-testid="result-adjust">Adjust material or quantity</a>
+      <a class="btn btn--subtle btn--block" routerLink="/quotes" data-testid="result-save">Save and view all quotes</a>
+    </div>
+  </aside>
+</div>

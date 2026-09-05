@@ -1,0 +1,16 @@
+:host { display: block; }
+.stats { margin-bottom: var(--space-4); }
+.statcard { padding: var(--space-4) var(--space-5); }
+.chips { display: flex; gap: var(--space-2); flex-wrap: wrap; }
+.chip {
+  min-height: 38px; padding: 0 var(--space-3);
+  border: 1px solid var(--color-border); border-radius: var(--radius-pill);
+  background: var(--color-surface); color: var(--color-ink-muted);
+  font: inherit; font-size: var(--text-sm); font-weight: var(--weight-medium); cursor: pointer;
+}
+.chip:active { background: var(--color-surface-sunken); }
+.chip.is-active { background: var(--color-primary); border-color: var(--color-primary); color: var(--color-ink-inverse); }
+@media (max-width: 768px) {
+  .chips { width: 100%; overflow-x: auto; flex-wrap: nowrap; }
+  .chip { min-height: var(--touch-target); white-space: nowrap; }
+}

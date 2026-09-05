@@ -1,0 +1,58 @@
+<div class="page" data-flow="checkout-review" data-testid="checkout-review-page">
+  <div class="page-head">
+    <div class="page-head__text">
+      <p class="eyebrow">Checkout · Step 1 of 3</p>
+      <h1 class="page-title">Review your order</h1>
+      <p class="page-sub">Check the part, material and quantity before choosing delivery.</p>
+    </div>
+  </div>
+
+  <ol class="checkout-steps" data-testid="checkout-steps">
+    <li class="checkout-steps__item is-active">1. Review</li>
+    <li class="checkout-steps__item">2. Shipping</li>
+    <li class="checkout-steps__item">3. Payment</li>
+  </ol>
+
+  <div class="split">
+    <section class="card">
+      <div class="card__head"><h2 class="card__title">What you're ordering</h2></div>
+      <div class="card__body">
+        <div class="data-list">
+          <div class="data-list__row"><span class="data-list__key">Drawing</span><span class="data-list__val" data-testid="review-drawing">{{ drawing()?.filename }}</span></div>
+          <div class="data-list__row"><span class="data-list__key">Material</span><span class="data-list__val" data-testid="review-material">{{ material().name }}</span></div>
+          <div class="data-list__row"><span class="data-list__key">Quantity</span><span class="data-list__val" data-testid="review-quantity">{{ quantity() }} parts</span></div>
+          <div class="data-list__row"><span class="data-list__key">Bends per part</span><span class="data-list__val">{{ bends().length }}</span></div>
+          <div class="data-list__row"><span class="data-list__key">Total cut length</span><span class="data-list__val">{{ feet(price().totalCutLengthMm) }}</span></div>
+          <div class="data-list__row"><span class="data-list__key">Sheets</span><span class="data-list__val">{{ nesting().sheetCount }}</span></div>
+        </div>
+
+        <div class="notice notice--info reviewnote">
+          <div class="notice__body">
+            <strong>This price is locked</strong>
+            Later changes to workshop pricing will not affect this order.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <aside class="card summary">
+      <div class="card__head"><h2 class="card__title">Order total</h2></div>
+      <div class="card__body">
+        <app-cost-breakdown
+          [lines]="price().lines"
+          [subtotalCents]="price().subtotalCents"
+          [totalCents]="price().totalCents"
+          [minimumApplied]="price().minimumApplied"
+          [minimumCents]="pricing().minimumOrderCents"
+          totalLabel="Parts subtotal"
+        />
+      </div>
+      <div class="card__foot foot">
+        <a class="btn btn--primary btn--block" [routerLink]="['/checkout', quoteId(), 'shipping']" data-testid="review-continue">
+          Choose shipping <app-icon name="chevron" [size]="16" />
+        </a>
+        <a class="btn btn--subtle btn--block" [routerLink]="['/quotes', quoteId()]" data-testid="review-back">Back to quote</a>
+      </div>
+    </aside>
+  </div>
+</div>

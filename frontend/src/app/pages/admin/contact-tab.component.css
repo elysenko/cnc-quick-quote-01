@@ -1,0 +1,8 @@
+:host { display: block; }
+.receipt {
+  display: flex; flex-direction: column; gap: 2px;
+  padding: var(--space-4); border: 1px dashed var(--color-border-strong);
+  border-radius: var(--radius-md); background: var(--color-surface-alt);
+  font-size: var(--text-sm); color: var(--color-ink-muted);
+}
+.receipt strong { color: var(--color-ink); }

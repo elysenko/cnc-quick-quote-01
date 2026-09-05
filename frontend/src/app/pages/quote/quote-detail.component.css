@@ -1,0 +1,5 @@
+:host { display: block; }
+.bed-body { padding: var(--space-3); }
+.summary { position: sticky; top: var(--space-4); }
+.foot { flex-direction: column; align-items: stretch; }
+@media (max-width: 900px) { .summary { position: static; } }

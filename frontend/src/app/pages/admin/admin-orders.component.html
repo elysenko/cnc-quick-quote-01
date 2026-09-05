@@ -1,0 +1,78 @@
+<div data-flow="admin-orders" data-testid="admin-orders-page">
+  <div class="grid grid--auto stats">
+    <div class="card statcard">
+      <div class="stat"><span class="stat__label">Orders shown</span><span class="stat__value" data-testid="admin-orders-count">{{ filtered().length }}</span></div>
+    </div>
+    <div class="card statcard">
+      <div class="stat"><span class="stat__label">Revenue</span><span class="stat__value" data-testid="admin-orders-revenue">{{ money(revenueCents()) }}</span></div>
+    </div>
+    <div class="card statcard">
+      <div class="stat"><span class="stat__label">Awaiting production</span><span class="stat__value">2</span></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card__head">
+      <div class="chips" role="group" aria-label="Filter by status">
+        @for (option of statuses; track option.value) {
+          <button type="button" class="chip" [class.is-active]="status() === option.value"
+                  [attr.data-testid]="'admin-orders-filter-' + option.value" (click)="setStatus(option.value)">
+            {{ option.label }}
+          </button>
+        }
+      </div>
+    </div>
+
+    @if (visible().length === 0) {
+      <app-empty-state icon="box" testid="admin-orders-empty" title="No orders with that status"
+                       description="Clear the filter to see everything that has been paid for." />
+    } @else {
+      <div class="table-wrap">
+        <table class="table" data-testid="admin-orders-table">
+          <thead>
+            <tr>
+              <th scope="col">Order</th>
+              <th scope="col">Customer</th>
+              <th scope="col">Job</th>
+              <th scope="col">Placed</th>
+              <th scope="col">Status</th>
+              <th scope="col" class="text-right">Total</th>
+              <th scope="col"><span class="visually-hidden">Actions</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (order of visible(); track order.id) {
+              <tr [attr.data-testid]="'admin-order-row-' + order.id">
+                <td class="mono">{{ order.orderNumber }}</td>
+                <td>
+                  <div>{{ order.customerName }}</div>
+                  <div class="muted text-sm">{{ order.customerEmail }}</div>
+                </td>
+                <td class="muted">{{ order.quantity }} × {{ order.materialName }}</td>
+                <td class="muted">{{ shortDate(order.placedAt) }}</td>
+                <td>
+                  <span [class]="badgeClass(order.status)">{{ statusLabel(order.status) }}</span>
+                  @if (order.emailError) { <span class="badge badge--warning">Email failed</span> }
+                </td>
+                <td class="mono text-right">{{ money(order.totalCents) }}</td>
+                <td class="text-right">
+                  <a class="btn btn--ghost btn--sm" [routerLink]="['/admin/orders', order.id]"
+                     [attr.data-testid]="'admin-order-open-' + order.id">Open</a>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <div class="card__foot">
+        <span class="muted text-sm" data-testid="admin-orders-page-label">Page {{ page() }} of {{ pageCount() }}</span>
+        <span class="spacer"></span>
+        <button type="button" class="btn btn--ghost btn--sm" data-testid="admin-orders-prev"
+                [disabled]="page() <= 1" (click)="goToPage(page() - 1)">Previous</button>
+        <button type="button" class="btn btn--ghost btn--sm" data-testid="admin-orders-next"
+                [disabled]="page() >= pageCount()" (click)="goToPage(page() + 1)">Next</button>
+      </div>
+    }
+  </div>
+</div>

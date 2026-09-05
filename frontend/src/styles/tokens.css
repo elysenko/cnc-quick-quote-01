@@ -1,0 +1,101 @@
+/* CNC Quick Quote — design tokens.
+   Single source of truth for colour, type, spacing, radius and elevation.
+   Component stylesheets must reference these via var(--token) and never
+   hardcode hex / rgb / named colours. */
+:root {
+  /* Surfaces & structure */
+  --color-bg: #eef1f6;
+  --color-bg-grid: #e4e9f1;
+  --color-surface: #ffffff;
+  --color-surface-alt: #f6f8fc;
+  --color-surface-sunken: #eaeef5;
+  --color-surface-inverse: #101822;
+  --color-surface-inverse-alt: #18222e;
+  --color-border: #d9e0ea;
+  --color-border-strong: #b7c3d3;
+  --color-border-inverse: #26333f;
+
+  /* Ink */
+  --color-ink: #0f1720;
+  --color-ink-muted: #5b6a7d;
+  --color-ink-subtle: #8595a8;
+  --color-ink-inverse: #eef4fb;
+  --color-ink-inverse-muted: #93a3b6;
+
+  /* Brand — overridable by admin branding settings at runtime */
+  --color-primary: #1668d6;
+  --color-primary-strong: #0f4fa8;
+  --color-primary-soft: #e6efff;
+  --color-accent: #f5820b;
+  --color-accent-strong: #c96703;
+  --color-accent-soft: #fff2e2;
+
+  /* Status */
+  --color-success: #0f7a55;
+  --color-success-soft: #e1f5ed;
+  --color-danger: #cd3a3a;
+  --color-danger-soft: #fdeaea;
+  --color-warning: #9a6600;
+  --color-warning-soft: #fdf2da;
+  --color-info: #1668d6;
+  --color-info-soft: #e6efff;
+
+  /* Machine / canvas semantics */
+  --color-bed: #131c26;
+  --color-bed-grid: #24303d;
+  --color-sheet: #dfe6ef;
+  --color-sheet-edge: #9aa9bb;
+  --color-cut: #1668d6;
+  --color-bend: #f5820b;
+  --color-laser: #e11d48;
+  --color-laser-glow: #fb7185;
+  --color-part-fill: #ffffff;
+
+  /* Typography */
+  --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  --text-xs: 0.75rem;
+  --text-sm: 0.8125rem;
+  --text-base: 0.9375rem;
+  --text-md: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.375rem;
+  --text-2xl: 1.75rem;
+  --text-3xl: 2.125rem;
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+  --weight-bold: 700;
+  --tracking-wide: 0.08em;
+
+  /* Spacing */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2rem;
+  --space-7: 3rem;
+
+  /* Radius */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-pill: 999px;
+
+  /* Elevation */
+  --shadow-sm: 0 1px 2px rgba(15, 23, 32, 0.06);
+  --shadow-md: 0 4px 14px rgba(15, 23, 32, 0.08);
+  --shadow-lg: 0 16px 40px rgba(15, 23, 32, 0.16);
+
+  /* Layout */
+  --sidebar-width: 248px;
+  --tabbar-height: 62px;
+  --touch-target: 44px;
+  --content-max: 1180px;
+
+  /* Motion */
+  --ease: cubic-bezier(0.2, 0.7, 0.3, 1);
+  --dur-fast: 120ms;
+  --dur-med: 220ms;
+}

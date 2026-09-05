@@ -1,0 +1,54 @@
+<div class="page narrow" data-flow="checkout-payment" data-testid="checkout-payment-page">
+  <div class="page-head">
+    <div class="page-head__text">
+      <p class="eyebrow">Checkout · Step 3 of 3</p>
+      <h1 class="page-title">Payment</h1>
+      <p class="page-sub">You'll be handed to Stripe's secure hosted checkout. We never see your card details.</p>
+    </div>
+  </div>
+
+  <ol class="checkout-steps">
+    <li class="checkout-steps__item is-done">1. Review</li>
+    <li class="checkout-steps__item is-done">2. Shipping</li>
+    <li class="checkout-steps__item is-active">3. Payment</li>
+  </ol>
+
+  <div class="card">
+    <div class="card__head">
+      <h2 class="card__title">Pay {{ money(grandTotal()) }}</h2>
+      <span class="badge badge--success"><app-icon name="lock" [size]="12" /> Secure</span>
+    </div>
+    <div class="card__body">
+      @if (failed()) {
+        <div class="notice notice--danger" role="alert" data-testid="payment-error">
+          <div class="notice__body">
+            <strong>We couldn't reach the payment provider</strong>
+            Nothing was charged and your quote is untouched. This is usually temporary — try again in a moment.
+          </div>
+        </div>
+        <button type="button" class="btn btn--primary btn--block" data-testid="payment-retry" (click)="retry()">
+          Try payment again
+        </button>
+      } @else {
+        <ul class="assurances">
+          <li class="assurance"><app-icon name="lock" [size]="16" /><span>Card details are entered on Stripe, never on this site.</span></li>
+          <li class="assurance"><app-icon name="mail" [size]="16" /><span>A PDF receipt is emailed the moment payment clears.</span></li>
+          <li class="assurance"><app-icon name="check" [size]="16" /><span>Your order is only created once the payment is confirmed.</span></li>
+        </ul>
+
+        <button type="button" class="btn btn--primary btn--block pay" data-testid="payment-submit"
+                [disabled]="redirecting()" (click)="payNow()">
+          <app-icon name="card" [size]="18" />
+          {{ redirecting() ? 'Redirecting to Stripe…' : 'Pay with card' }}
+        </button>
+
+        <div class="row row--between altrow">
+          <a class="btn btn--subtle btn--sm" [routerLink]="['/checkout', quoteId(), 'shipping']" data-testid="payment-back">Back to shipping</a>
+          <button type="button" class="btn btn--subtle btn--sm" data-testid="payment-show-error" (click)="showFailure()">
+            Preview the provider-unreachable state
+          </button>
+        </div>
+      }
+    </div>
+  </div>
+</div>

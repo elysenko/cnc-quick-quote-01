@@ -1,0 +1,67 @@
+<div class="page" data-flow="orders-list" data-testid="orders-list-page">
+  <div class="page-head">
+    <div class="page-head__text">
+      <p class="eyebrow">Orders</p>
+      <h1 class="page-title">My orders</h1>
+      <p class="page-sub">{{ filtered().length }} orders · receipts stay downloadable for seven years.</p>
+    </div>
+    <a class="btn btn--primary" routerLink="/quote/new/upload" data-testid="orders-new-quote">
+      <app-icon name="plus" [size]="16" /> New quote
+    </a>
+  </div>
+
+  <div class="card">
+    <div class="card__head">
+      <div class="chips" role="group" aria-label="Filter by status">
+        @for (option of statuses; track option.value) {
+          <button type="button" class="chip" [class.is-active]="status() === option.value"
+                  [attr.data-testid]="'orders-filter-' + option.value" (click)="setStatus(option.value)">
+            {{ option.label }}
+          </button>
+        }
+      </div>
+    </div>
+
+    @if (visible().length === 0) {
+      <app-empty-state icon="box" testid="orders-empty" title="Nothing here yet"
+                       description="Orders appear once a payment clears. Quote a part to get started.">
+        <a class="btn btn--primary" routerLink="/quote/new/upload" data-testid="orders-empty-cta">Start a quote</a>
+      </app-empty-state>
+    } @else {
+      <ul class="orderlist" data-testid="orders-list">
+        @for (order of visible(); track order.id) {
+          <li class="orderrow" [attr.data-testid]="'order-row-' + order.id">
+            <div class="orderrow__main">
+              <div class="orderrow__top">
+                <span class="mono orderrow__num">{{ order.orderNumber }}</span>
+                <span [class]="badgeClass(order.status)">{{ statusLabel(order.status) }}</span>
+              </div>
+              <span class="orderrow__desc">{{ order.quantity }} × {{ order.materialName }}</span>
+              <span class="muted text-sm">
+                From quote {{ order.quoteRef }} · {{ order.shippingMethod }} · {{ shortDate(order.placedAt) }}
+              </span>
+              @if (order.emailError) {
+                <span class="badge badge--warning" [attr.data-testid]="'order-email-error-' + order.id">Receipt email failed</span>
+              }
+            </div>
+            <div class="orderrow__side">
+              <span class="mono orderrow__total">{{ money(order.totalCents) }}</span>
+              <a class="btn btn--ghost btn--sm" href="#" [attr.data-testid]="'order-receipt-' + order.id">
+                <app-icon name="download" [size]="15" /> Receipt
+              </a>
+            </div>
+          </li>
+        }
+      </ul>
+
+      <div class="card__foot">
+        <span class="muted text-sm" data-testid="orders-page-label">Page {{ page() }} of {{ pageCount() }}</span>
+        <span class="spacer"></span>
+        <button type="button" class="btn btn--ghost btn--sm" data-testid="orders-prev-page"
+                [disabled]="page() <= 1" (click)="goToPage(page() - 1)">Previous</button>
+        <button type="button" class="btn btn--ghost btn--sm" data-testid="orders-next-page"
+                [disabled]="page() >= pageCount()" (click)="goToPage(page() + 1)">Next</button>
+      </div>
+    }
+  </div>
+</div>

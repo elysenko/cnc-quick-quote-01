@@ -1,0 +1,19 @@
+<div class="page" data-flow="admin" data-testid="admin-shell">
+  <div class="page-head">
+    <div class="page-head__text">
+      <p class="eyebrow">Admin console</p>
+      <h1 class="page-title">Run the workshop</h1>
+      <p class="page-sub">Everything customers see — materials, prices, machine limits and branding.</p>
+    </div>
+    <span class="badge badge--accent">{{ branding().companyName }}</span>
+  </div>
+
+  <nav class="tabs" aria-label="Admin sections" data-testid="admin-tabs">
+    @for (tab of tabs; track tab.path) {
+      <a class="tabs__link" [routerLink]="['/admin', tab.path]" routerLinkActive="is-active"
+         [attr.data-testid]="tab.testid">{{ tab.label }}</a>
+    }
+  </nav>
+
+  <router-outlet />
+</div>

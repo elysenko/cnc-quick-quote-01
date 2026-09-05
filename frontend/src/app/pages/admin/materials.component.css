@@ -1,0 +1,3 @@
+:host { display: block; }
+.nowrap { white-space: nowrap; }
+.nowrap .btn { margin-left: var(--space-1); }

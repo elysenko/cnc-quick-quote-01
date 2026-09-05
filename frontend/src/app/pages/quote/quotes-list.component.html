@@ -1,0 +1,111 @@
+<div class="page" data-flow="quotes-list" data-testid="quotes-list-page">
+  <div class="page-head">
+    <div class="page-head__text">
+      <p class="eyebrow">Quotes</p>
+      <h1 class="page-title">My quotes</h1>
+      <p class="page-sub">{{ filtered().length }} quotes · prices are held at the rates in effect when generated.</p>
+    </div>
+    <a class="btn btn--primary" routerLink="/quote/new/upload" data-testid="quotes-new">
+      <app-icon name="plus" [size]="16" /> New quote
+    </a>
+  </div>
+
+  <div class="card">
+    <div class="card__head filters">
+      <div class="chips" role="group" aria-label="Filter by status">
+        @for (option of statuses; track option.value) {
+          <button
+            type="button"
+            class="chip"
+            [class.is-active]="status() === option.value"
+            [attr.data-testid]="'quotes-filter-' + option.value"
+            (click)="setStatus(option.value)"
+          >{{ option.label }}</button>
+        }
+      </div>
+      <label class="sortwrap">
+        <span class="visually-hidden">Sort quotes</span>
+        <select class="select" data-testid="quotes-sort" [value]="sort()" (change)="setSort($any($event.target).value)">
+          <option value="newest">Newest first</option>
+          <option value="oldest">Oldest first</option>
+          <option value="total-desc">Highest total</option>
+          <option value="total-asc">Lowest total</option>
+        </select>
+      </label>
+    </div>
+
+    @if (visible().length === 0) {
+      <app-empty-state
+        icon="doc"
+        testid="quotes-empty"
+        title="No quotes match that filter"
+        description="Clear the filter, or upload a drawing to start a new quote."
+      >
+        <a class="btn btn--primary" routerLink="/quote/new/upload" data-testid="quotes-empty-cta">Start a quote</a>
+      </app-empty-state>
+    } @else {
+      <div class="table-wrap desktop-only">
+        <table class="table" data-testid="quotes-table">
+          <thead>
+            <tr>
+              <th scope="col">Quote</th>
+              <th scope="col">Drawing</th>
+              <th scope="col">Material</th>
+              <th scope="col">Qty</th>
+              <th scope="col">Sheets</th>
+              <th scope="col">Created</th>
+              <th scope="col">Status</th>
+              <th scope="col" class="text-right">Total</th>
+              <th scope="col"><span class="visually-hidden">Actions</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (quote of visible(); track quote.id) {
+              <tr [attr.data-testid]="'quote-row-' + quote.id">
+                <td class="mono">{{ quote.reference }}</td>
+                <td>{{ quote.drawingName }}</td>
+                <td class="muted">{{ quote.materialName }}</td>
+                <td class="mono">{{ quote.quantity }}</td>
+                <td class="mono">{{ quote.sheetCount }}</td>
+                <td class="muted">{{ shortDate(quote.createdAt) }}</td>
+                <td><span [class]="badgeClass(quote.status)">{{ quote.status }}</span></td>
+                <td class="mono text-right">{{ money(quote.totalCents) }}</td>
+                <td class="text-right">
+                  <a class="btn btn--ghost btn--sm" [routerLink]="['/quotes', quote.id]" [attr.data-testid]="'quote-open-' + quote.id">Open</a>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <ul class="cardlist mobile-only" data-testid="quotes-cards">
+        @for (quote of visible(); track quote.id) {
+          <li>
+            <a class="qcard" [routerLink]="['/quotes', quote.id]" [attr.data-testid]="'quote-card-' + quote.id">
+              <span class="qcard__top">
+                <span class="mono qcard__ref">{{ quote.reference }}</span>
+                <span [class]="badgeClass(quote.status)">{{ quote.status }}</span>
+              </span>
+              <span class="qcard__name">{{ quote.drawingName }}</span>
+              <span class="qcard__meta muted text-sm">{{ quote.quantity }} × {{ quote.materialName }}</span>
+              <span class="qcard__bottom">
+                <span class="muted text-sm">{{ shortDate(quote.createdAt) }}</span>
+                <span class="mono qcard__total">{{ money(quote.totalCents) }}</span>
+              </span>
+            </a>
+          </li>
+        }
+      </ul>
+
+      <div class="card__foot pager">
+        <span class="muted text-sm" data-testid="quotes-page-label">Page {{ page() }} of {{ pageCount() }}</span>
+        <span class="spacer"></span>
+        <button type="button" class="btn btn--ghost btn--sm" data-testid="quotes-prev-page"
+                [disabled]="page() <= 1" (click)="goToPage(page() - 1)">Previous</button>
+        <button type="button" class="btn btn--ghost btn--sm" data-testid="quotes-next-page"
+                [disabled]="page() >= pageCount()" (click)="goToPage(page() + 1)">Next</button>
+      </div>
+    }
+  </div>
+</div>

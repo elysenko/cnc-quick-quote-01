@@ -1,0 +1,6 @@
+:host { display: block; }
+.brandline { font-weight: var(--weight-semibold); }
+.brandsub { font-size: var(--text-xs); text-transform: uppercase; letter-spacing: var(--tracking-wide); color: var(--color-ink-inverse-muted); }
+.form-card { margin-top: var(--space-4); }
+.form-card .field:last-of-type { margin-bottom: var(--space-5); }
+.demo-row { display: flex; flex-wrap: wrap; gap: var(--space-2); justify-content: center; }
